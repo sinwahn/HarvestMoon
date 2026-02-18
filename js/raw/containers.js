@@ -1,0 +1,406 @@
+class Container {}
+
+class _ArrayLike extends Container {
+	_data
+
+	constructor(...args) {
+		super()
+		this._data = new globalThis.Array(...args)
+	}
+
+	*[Symbol.iterator]() {
+		for (const element of this._data)
+			yield element
+	}
+	
+	clear() {
+		this._data.length = 0
+	}
+
+	getData() {
+		return this._data
+	}
+
+	getSize() {
+		return this._data.length
+	}
+
+	isEmpty() {
+		return this._data.length === 0
+	}
+	
+	count(value) {
+		let result = 0
+		for (const item of this._data)
+			if (value == item)
+				result += 1
+		return result
+	}
+
+	countBy(predicate) {
+		let result = 0
+		for (let i = 0; i < this.getSize(); i++)
+			if (predicate(this._data[i], i))
+				result += 1
+		return result
+	}
+
+	findPos(value) {
+		const index = this._data.indexOf(value)
+		return index === -1 ? undefined : index
+	}
+
+	findPosBy(predicate) {
+		for (let i = 0; i < this.getSize(); i++)
+			if (predicate(this._data[i], i))
+				return i
+		return undefined
+	}
+
+	forEach(predicate) {
+		for (let i = 0; i < this.getSize(); i++)
+			predicate(this._data[i], i)
+	}
+
+	writeData(writer, sizeWriteMethod, itemWritePredicate) {
+		sizeWriteMethod(writer, this.getSize())
+		for (const value of this._data)
+			itemWritePredicate(writer, value)
+	}
+
+	readData(reader, sizeReadMethod, itemReadPredicate) {
+		const count = sizeReadMethod(reader)
+		this.clear()
+		for (let i = 0; i < count; i++) {
+			const value = itemReadPredicate(reader)
+			assert(value !== undefined)
+			this._data[i] = value
+		}
+	}
+}
+
+class Vector extends _ArrayLike {
+
+	constructor(...args) {
+		super(...args);
+	}
+	
+	set(index, value) {
+	    expecttype(index, "number")
+	    assert(index >= 0, `index must be non-negative: ${index}`)
+	    assert(index < this.getSize(), `index out of bounds: ${index}`)
+	    this._data[index] = value
+	}
+	
+	get(index) {
+	    assert(index >= 0 && index < this.getSize(), `vector index out of bounds: ${index}`)
+	    return this._data[index]
+	}
+
+	front() {
+		assert(!this.isEmpty(), "vector is empty")
+		return this._data[0]
+	}
+
+	back() {
+		assert(!this.isEmpty(), "vector is empty")
+		return this._data[this.getSize() - 1]
+	}
+
+	pushBack(item) {
+		assert(item)
+		this._data.push(item)
+	}
+
+	popBack() {
+		assert(!this.isEmpty(), "vector is empty")
+		return this._data.pop()
+	}
+	
+	contains(value) {
+	    return this.findPos(value) !== undefined
+	}
+	
+	containsBy(predicate) {
+	    return this.findPosBy(predicate) !== undefined
+	}
+
+	remove(index) {
+	    if (index < 0 || index >= this.getSize())
+	        raise(`index out of bounds: ${index}`)
+	    return this._data.splice(index, 1)[0]
+	}
+
+	removeBy(predicate) {
+		const index = this.findPosBy(predicate)
+		if (!index)
+			return undefined
+		return this.remove(index)
+	}
+
+	removeByValue(value) {
+		const removedValue = this.removeByValueNoThrow(value)
+		if (!removedValue)
+			error(`value not found '${value}'`)
+		return removedValue
+	}
+
+	removeByValueNoThrow(value) {
+		const index = this.findPos(value)
+		if (!index)
+			return undefined
+		return this.remove(index)
+	}
+
+	sort(predicate = undefined) {
+		this._data.sort(predicate)
+	}
+
+}
+
+class Map extends Container {
+	_data
+
+	constructor(...args) {
+		super()
+		this._data = new globalThis.Map(...args)
+	}
+	
+	*[Symbol.iterator]() {
+		for (const element of this._data)
+			yield element
+	}
+
+	keys() {
+		return new Vector(...this._data.keys())
+	}
+
+	values() {
+		return new Vector(...this._data.values())
+	}
+
+	set(key, value) {
+		if (!this._data.has(key))
+			raise(`Key does not exist: ${key}`)
+		assert(value !== undefined)
+		this._data.set(key, value)
+	}
+
+	create(key, value) {
+		if (this._data.has(key))
+			raise(`Key already exists: ${key}=${value}`)
+		assert(value !== undefined)
+		this._data.set(key, value)
+	}
+
+	setOrCreate(key, value) {
+		assert(value !== undefined)
+		this._data.set(key, value)
+	}
+
+	get(key) {
+		if (!this._data.has(key))
+			raise(`Key not found: ${key}`)
+		return this._data.get(key)
+	}
+
+	find(key) {
+		return this._data.get(key)
+	}
+
+	findKeyByValue(toFind) {
+		for (const [key, value] of this._data)
+			if (value == toFind)
+				return key
+		return undefined
+	}
+
+	findKeyBy(predicate) {
+		for (const [key, value] of this._data)
+			if (predicate(key, value))
+				return key
+		return undefined
+	}
+
+	remove(key) {
+		if (!this._data.has(key))
+			raise(`Invalid key: ${key}`)
+		const value = this._data.get(key)
+		this._data.delete(key)
+		return value
+	}
+
+	tryRemove(key) {
+		if (!this._data.has(key))
+			return null
+		const value = this._data.get(key)
+		this._data.delete(key)
+		return value
+	}
+
+	getSize() {
+		return this._data.size
+	}
+
+	clear() {
+		this._data.clear()
+	}
+
+	getData() {
+		return this._data
+	}
+
+	forEach(predicate) {
+		for (const [key, value] of this._data)
+			predicate(key, value)
+	}
+
+	writeData(writer, sizeWriteMethod, itemWritePredicate) {
+		sizeWriteMethod(writer, this.getSize())
+		for (const [key, value] of this._data) {
+			itemWritePredicate(writer, key, value)
+		}
+	}
+
+	readData(reader, sizeReadMethod, itemReadPredicate) {
+		const count = sizeReadMethod(reader)
+		this.clear()
+		for (let i = 0; i < count; i++) {
+			const [key, value] = itemReadPredicate(reader)
+			assert(key !== undefined)
+			assert(value !== undefined)
+			this._data.set(key, value)
+		}
+	}
+}
+
+class Set extends Container {
+	_data
+
+	constructor(...args) {
+		super()
+		this._data = new globalThis.Set(...args)
+	}
+
+	*[Symbol.iterator]() {
+		for (const element of this._data)
+			yield element
+	}
+
+	toVector() {
+		return new Vector(...this._data)
+	}
+	
+	tryInsert(value) {
+		assert(value !== undefined)
+		const had = this.has(value)
+		this._data.add(value)
+		return !had
+	}
+
+	insert(value) {
+		const inserted = this.tryInsert(value)
+		if (!inserted)
+			raise("duplicate element")
+	}
+
+	has(value) {
+		return this._data.has(value)
+	}
+
+	remove(value) {
+		if (!this.tryRemove(value))
+			raise("element does not exist")
+		return true
+	}
+
+	tryRemove(value) {
+		return this._data.delete(value)
+	}
+
+	getSize() {
+		return this._data.size
+	}
+
+	clear() {
+		this._data.clear()
+	}
+
+	forEach(predicate) {
+		for (const value of this._data)
+			predicate(value)
+	}
+	
+	writeData(writer, sizeWriteMethod, itemWritePredicate) {
+		sizeWriteMethod(writer, this.getSize())
+		for (const value of this._data)
+			itemWritePredicate(writer, value)
+	}
+
+	readData(reader, sizeReadMethod, itemReadPredicate) {
+		const count = sizeReadMethod(reader)
+		this.clear()
+		for (let i = 0; i < count; i++) {
+			const value = itemReadPredicate(reader)
+			assert(value !== undefined)
+			this._data.add(value)
+		}
+	}
+}
+
+class Stack extends _ArrayLike {
+
+	constructor(...args) {
+		super(...args)
+	}
+
+	push(value) {
+		assert(value !== undefined)
+		this._data.push(value)
+	}
+
+	pop() {
+		if (this.isEmpty())
+			raise("stack underflow")
+		return this._data.pop()
+	}
+
+	top() {
+		assert(!this.isEmpty(), "stack is empty")
+		return this._data[this.getSize() - 1]
+	}
+}
+
+class Queue extends _ArrayLike {
+
+	constructor(...args) {
+		super(...args)
+	}
+
+	enqueue(value) {
+		assert(value !== undefined)
+		this._data.push(value)
+	}
+
+	dequeue() {
+		if (this.isEmpty())
+			raise("queue underflow")
+		return this._data.shift()
+	}
+
+	front() {
+		if (this.isEmpty())
+			raise("queue is empty")
+		return this._data[0]
+	}
+
+	back() {
+		if (this.isEmpty())
+			raise("queue is empty")
+		return this._data[this.getSize() - 1]
+	}
+}
+
+if (module !== undefined && module.exports) {
+	module.exports = { Container, Vector, Map, Set, Stack, Queue }
+}
