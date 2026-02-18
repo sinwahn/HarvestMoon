@@ -36,7 +36,7 @@ $Sources = @(
 	}
 	[ordered]@{
 		File = 'BinaryIO.js'
-		Exports = @('BinaryContainer', 'BinaryReader', 'BinaryWriter', 'BinaryReaderTyped', 'BinaryWriterTyped', 'clearBinaryHexData')
+		Exports = @('BinaryContainer', 'BinaryReader', 'BinaryWriter', 'BinaryReaderTyped', 'BinaryWriterTyped', 'DebugBinaryReader', 'DebugBinaryWriter', 'clearBinaryHexData')
 	}
 )
 

@@ -766,3 +766,162 @@ class BinaryWriterTyped {
 		return this
 	}
 }
+
+const DebugOpcode = {
+	readU8: 0x01,
+	readU16: 0x02,
+	readU32: 0x03,
+	readI8: 0x04,
+	readI16: 0x05,
+	readI32: 0x06,
+	readF32: 0x07,
+	readF64: 0x08,
+	readBool: 0x09,
+	readStringU8: 0x0A,
+	readStringU16: 0x0B,
+	readStringU32: 0x0C,
+	readString: 0x0D,
+	readCString: 0x0E,
+	readVarInt: 0x0F,
+	readVector2F32: 0x10,
+	readVector2I16: 0x11,
+	readVector2I32: 0x12,
+	readVector3F32: 0x13,
+	readVector3I16: 0x14,
+	readVector3I32: 0x15,
+	readVector4F32: 0x16,
+	readVector4I16: 0x17,
+	readVector4I32: 0x18,
+	readColor3F32: 0x19,
+	readColor3U8: 0x1A,
+	readColor4F32: 0x1B,
+	readColor4U8: 0x1C,
+	readCFrame: 0x1D,
+}
+
+const DebugOpcodeToName = Object.fromEntries(
+	Object.entries(DebugOpcode).map(([name, op]) => [op, name])
+)
+
+class DebugBinaryWriter {
+	constructor(writer) {
+		this.writer = writer
+		this.log = []
+	}
+
+	_tag(opcodeName) {
+		this.log.push(opcodeName)
+		this.writer.writeU8(DebugOpcode[opcodeName])
+	}
+
+	// Expose size/data so callers can grab the buffer the same way as a plain writer
+	get size() { return this.writer.size }
+	get data() { return this.writer.data }
+	get capacity() { return this.writer.capacity }
+
+	writeU8(value) { this._tag('readU8'); this.writer.writeU8(value); return this }
+	writeU16(value) { this._tag('readU16'); this.writer.writeU16(value); return this }
+	writeU32(value) { this._tag('readU32'); this.writer.writeU32(value); return this }
+	writeI8(value) { this._tag('readI8'); this.writer.writeI8(value); return this }
+	writeI16(value) { this._tag('readI16'); this.writer.writeI16(value); return this }
+	writeI32(value) { this._tag('readI32'); this.writer.writeI32(value); return this }
+	writeF32(value) { this._tag('readF32'); this.writer.writeF32(value); return this }
+	writeF64(value) { this._tag('readF64'); this.writer.writeF64(value); return this }
+	writeBool(value) { this._tag('readBool'); this.writer.writeBool(value); return this }
+	writeStringU8(s) { this._tag('readStringU8'); this.writer.writeStringU8(s); return this }
+	writeStringU16(s) { this._tag('readStringU16');this.writer.writeStringU16(s); return this }
+	writeStringU32(s) { this._tag('readStringU32');this.writer.writeStringU32(s); return this }
+	writeString(s) { this._tag('readString'); this.writer.writeString(s); return this }
+	writeCString(s) { this._tag('readCString'); this.writer.writeCString(s); return this }
+	writeVarInt(value) { this._tag('readVarInt'); this.writer.writeVarInt(value); return this }
+
+	writeVector2F32(v) { this._tag('readVector2F32'); this.writer.writeVector2F32(v); return this }
+	writeVector2I16(v) { this._tag('readVector2I16'); this.writer.writeVector2I16(v); return this }
+	writeVector2I32(v) { this._tag('readVector2I32'); this.writer.writeVector2I32(v); return this }
+	writeVector3F32(v) { this._tag('readVector3F32'); this.writer.writeVector3F32(v); return this }
+	writeVector3I16(v) { this._tag('readVector3I16'); this.writer.writeVector3I16(v); return this }
+	writeVector3I32(v) { this._tag('readVector3I32'); this.writer.writeVector3I32(v); return this }
+	writeVector4F32(v) { this._tag('readVector4F32'); this.writer.writeVector4F32(v); return this }
+	writeVector4I16(v) { this._tag('readVector4I16'); this.writer.writeVector4I16(v); return this }
+	writeVector4I32(v) { this._tag('readVector4I32'); this.writer.writeVector4I32(v); return this }
+	writeColor3F32(v) { this._tag('readColor3F32'); this.writer.writeColor3F32(v); return this }
+	writeColor3U8(v) { this._tag('readColor3U8'); this.writer.writeColor3U8(v); return this }
+	writeColor4F32(v) { this._tag('readColor4F32'); this.writer.writeColor4F32(v); return this }
+	writeColor4U8(v) { this._tag('readColor4U8'); this.writer.writeColor4U8(v); return this }
+	writeCFrame(v) { this._tag('readCFrame'); this.writer.writeCFrame(v); return this }
+
+	// Pass-through for non-debuggable utility methods
+	writeZeros(count) { this.writer.writeZeros(count); return this }
+	writeByteRepeated(source, count) { this.writer.writeByteRepeated(source, count); return this }
+	padToAlignment(alignment = 4, fill = 0){ this.writer.padToAlignment(alignment, fill); return this }
+	writeStringOfSize(source, stringSize) { this.writer.writeStringOfSize(source, stringSize); return this }
+	toHex() { return this.writer.toHex() }
+	toAscii() { return this.writer.toAscii() }
+	toString() { return this.writer.toString() }
+}
+
+class DebugBinaryReader {
+	constructor(reader) {
+		this.reader = reader
+		this.log = []
+	}
+
+	_assertTag(opcodeName) {
+		const expected = DebugOpcode[opcodeName]
+		
+		const actual = this.reader.readU8()
+		this.log.push(opcodeName)
+
+		if (actual !== expected) {
+			const actualName = DebugOpcodeToName[actual] ?? `unknown(0x${actual.toString(16).padStart(2, '0')})`
+			throw new Error(
+				`Stream mismatch at position ${this.reader.position - 1}: ` +
+				`expected ${opcodeName} (0x${expected.toString(16).padStart(2, '0')}), ` +
+				`got ${actualName} (0x${actual.toString(16).padStart(2, '0')})`
+			)
+		}
+	}
+
+	get position() { return this.reader.position }
+	get size() { return this.reader.size }
+
+	tell() { return this.reader.tell() }
+	seek(pos) { this.reader.seek(pos); return this }
+	skip(bytes) { this.reader.skip(bytes); return this }
+	align(a) { this.reader.align(a); return this }
+	setBuffer(d) { this.reader.setBuffer(d); return this }
+
+	readU8() { this._assertTag('readU8'); return this.reader.readU8() }
+	readU16() { this._assertTag('readU16'); return this.reader.readU16() }
+	readU32() { this._assertTag('readU32'); return this.reader.readU32() }
+	readI8() { this._assertTag('readI8'); return this.reader.readI8() }
+	readI16() { this._assertTag('readI16'); return this.reader.readI16() }
+	readI32() { this._assertTag('readI32'); return this.reader.readI32() }
+	readF32() { this._assertTag('readF32'); return this.reader.readF32() }
+	readF64() { this._assertTag('readF64'); return this.reader.readF64() }
+	readBool() { this._assertTag('readBool'); return this.reader.readBool() }
+	readStringU8() { this._assertTag('readStringU8'); return this.reader.readStringU8() }
+	readStringU16() { this._assertTag('readStringU16');return this.reader.readStringU16() }
+	readStringU32() { this._assertTag('readStringU32');return this.reader.readStringU32() }
+	readString() { this._assertTag('readString'); return this.reader.readString() }
+	readCString() { this._assertTag('readCString'); return this.reader.readCString() }
+	readVarInt() { this._assertTag('readVarInt'); return this.reader.readVarInt() }
+
+	readVector2F32() { this._assertTag('readVector2F32'); return this.reader.readVector2F32() }
+	readVector2I16() { this._assertTag('readVector2I16'); return this.reader.readVector2I16() }
+	readVector2I32() { this._assertTag('readVector2I32'); return this.reader.readVector2I32() }
+	readVector3F32() { this._assertTag('readVector3F32'); return this.reader.readVector3F32() }
+	readVector3I16() { this._assertTag('readVector3I16'); return this.reader.readVector3I16() }
+	readVector3I32() { this._assertTag('readVector3I32'); return this.reader.readVector3I32() }
+	readVector4F32() { this._assertTag('readVector4F32'); return this.reader.readVector4F32() }
+	readVector4I16() { this._assertTag('readVector4I16'); return this.reader.readVector4I16() }
+	readVector4I32() { this._assertTag('readVector4I32'); return this.reader.readVector4I32() }
+	readColor3F32() { this._assertTag('readColor3F32'); return this.reader.readColor3F32() }
+	readColor3U8() { this._assertTag('readColor3U8'); return this.reader.readColor3U8() }
+	readCFrame() { this._assertTag('readCFrame'); return this.reader.readCFrame() }
+
+	// Pass-through for non-debuggable utility methods
+	readStringOfSize(size) { return this.reader.readStringOfSize(size) }
+	toHex() { return this.reader.toHex() }
+	toAscii() { return this.reader.toAscii() }
+}
