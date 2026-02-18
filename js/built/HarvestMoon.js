@@ -107,10 +107,6 @@ const HM = (() => {
 		raise_typeerror(`'${expected}' expected, got '${actual}'`)
 	}
 
-	if (module !== undefined && module.exports) {
-		module.exports = { raise, raise_typeerror, assert, istype, expecttype, expectinstanceof }
-	}
-
 	// ------------------------------------------------------------------------
 	// containers.js
 	// ------------------------------------------------------------------------
@@ -515,10 +511,6 @@ const HM = (() => {
 				raise("queue is empty")
 			return this._data[this.getSize() - 1]
 		}
-	}
-
-	if (module !== undefined && module.exports) {
-		module.exports = { Container, Vector, Map, Set, Stack, Queue }
 	}
 
 	// ------------------------------------------------------------------------
@@ -1145,156 +1137,152 @@ const HM = (() => {
 		}
 	}
 
-		const ValueType = {
-			NULL: 0,
-			BOOLEAN: 1,
-			NUMBER: 2,
-			STRING: 3,
-			ARRAY: 4,
-			OBJECT: 5,
-			UINT8: 6,
-			INT8: 7,
-			UINT16: 8,
-			INT16: 9,
-			UINT32: 10,
-			INT32: 11,
-			FLOAT32: 12,
-			FLOAT64: 13,
+	const ValueType = {
+		NULL: 0,
+		BOOLEAN: 1,
+		NUMBER: 2,
+		STRING: 3,
+		ARRAY: 4,
+		OBJECT: 5,
+		UINT8: 6,
+		INT8: 7,
+		UINT16: 8,
+		INT16: 9,
+		UINT32: 10,
+		INT32: 11,
+		FLOAT32: 12,
+		FLOAT64: 13,
+	}
+
+	class BinaryReaderTyped {
+		constructor(reader) {
+			this.reader = reader
 		}
 
-		class BinaryReaderTyped {
-			constructor(reader) {
-				this.reader = reader
-			}
+		readValue() {
+			const typeId = this.reader.readU8()
 
-			readValue() {
-				const typeId = this.reader.readU8()
-
-				switch (typeId) {
-					case ValueType.NULL:
-						return null
-					case ValueType.BOOLEAN:
-						return this.reader.readBool()
-					case ValueType.NUMBER:
-						return this.reader.readF64()
-					case ValueType.STRING:
-						return this.reader.readString()
-					case ValueType.UINT8:
-						return this.reader.readU8()
-					case ValueType.INT8:
-						return this.reader.readI8()
-					case ValueType.UINT16:
-						return this.reader.readU16()
-					case ValueType.INT16:
-						return this.reader.readI16()
-					case ValueType.UINT32:
-						return this.reader.readU32()
-					case ValueType.INT32:
-						return this.reader.readI32()
-					case ValueType.FLOAT32:
-						return this.reader.readF32()
-					case ValueType.FLOAT64:
-						return this.reader.readF64()
-					case ValueType.ARRAY:
-						const length = this.reader.readU32()
-						const array = []
-						for (let i = 0; i < length; i++) {
-							array.push(this.readValue())
-						}
-						return array
-					case ValueType.OBJECT:
-						const entries = this.reader.readU32()
-						const object = {}
-						for (let i = 0; i < entries; i++) {
-							const key = this.readValue()
-							const val = this.readValue()
-							object[key] = val
-						}
-						return object
-					default:
-						throw new Error(`Unknown value type: ${typeId}`)
-				}
+			switch (typeId) {
+				case ValueType.NULL:
+					return null
+				case ValueType.BOOLEAN:
+					return this.reader.readBool()
+				case ValueType.NUMBER:
+					return this.reader.readF64()
+				case ValueType.STRING:
+					return this.reader.readString()
+				case ValueType.UINT8:
+					return this.reader.readU8()
+				case ValueType.INT8:
+					return this.reader.readI8()
+				case ValueType.UINT16:
+					return this.reader.readU16()
+				case ValueType.INT16:
+					return this.reader.readI16()
+				case ValueType.UINT32:
+					return this.reader.readU32()
+				case ValueType.INT32:
+					return this.reader.readI32()
+				case ValueType.FLOAT32:
+					return this.reader.readF32()
+				case ValueType.FLOAT64:
+					return this.reader.readF64()
+				case ValueType.ARRAY:
+					const length = this.reader.readU32()
+					const array = []
+					for (let i = 0; i < length; i++) {
+						array.push(this.readValue())
+					}
+					return array
+				case ValueType.OBJECT:
+					const entries = this.reader.readU32()
+					const object = {}
+					for (let i = 0; i < entries; i++) {
+						const key = this.readValue()
+						const val = this.readValue()
+						object[key] = val
+					}
+					return object
+				default:
+					throw new Error(`Unknown value type: ${typeId}`)
 			}
 		}
+	}
 
-		class BinaryWriterTyped {
-			constructor(writer) {
-				this.writer = writer
-			}
+	class BinaryWriterTyped {
+		constructor(writer) {
+			this.writer = writer
+		}
 
-			writeValue(value) {
-				if (value === null) {
-					this.writer.writeU8(ValueType.NULL)
-				} else if (typeof value === 'boolean') {
-					this.writer.writeU8(ValueType.BOOLEAN)
-					this.writer.writeBool(value)
-				} else if (typeof value === 'number') {
-					// Determine the most appropriate numeric type
-					if (Number.isInteger(value)) {
-						if (value >= 0 && value <= 255) {
-							this.writer.writeU8(ValueType.UINT8)
-							this.writer.writeU8(value)
-						} else if (value >= -128 && value <= 127) {
-							this.writer.writeU8(ValueType.INT8)
-							this.writer.writeI8(value)
-						} else if (value >= 0 && value <= 65535) {
-							this.writer.writeU8(ValueType.UINT16)
-							this.writer.writeU16(value)
-						} else if (value >= -32768 && value <= 32767) {
-							this.writer.writeU8(ValueType.INT16)
-							this.writer.writeI16(value)
-						} else if (value >= 0 && value <= 4294967295) {
-							this.writer.writeU8(ValueType.UINT32)
-							this.writer.writeU32(value)
-						} else if (value >= -2147483648 && value <= 2147483647) {
-							this.writer.writeU8(ValueType.INT32)
-							this.writer.writeI32(value)
+		writeValue(value) {
+			if (value === null) {
+				this.writer.writeU8(ValueType.NULL)
+			} else if (typeof value === 'boolean') {
+				this.writer.writeU8(ValueType.BOOLEAN)
+				this.writer.writeBool(value)
+			} else if (typeof value === 'number') {
+				// Determine the most appropriate numeric type
+				if (Number.isInteger(value)) {
+					if (value >= 0 && value <= 255) {
+						this.writer.writeU8(ValueType.UINT8)
+						this.writer.writeU8(value)
+					} else if (value >= -128 && value <= 127) {
+						this.writer.writeU8(ValueType.INT8)
+						this.writer.writeI8(value)
+					} else if (value >= 0 && value <= 65535) {
+						this.writer.writeU8(ValueType.UINT16)
+						this.writer.writeU16(value)
+					} else if (value >= -32768 && value <= 32767) {
+						this.writer.writeU8(ValueType.INT16)
+						this.writer.writeI16(value)
+					} else if (value >= 0 && value <= 4294967295) {
+						this.writer.writeU8(ValueType.UINT32)
+						this.writer.writeU32(value)
+					} else if (value >= -2147483648 && value <= 2147483647) {
+						this.writer.writeU8(ValueType.INT32)
+						this.writer.writeI32(value)
+					} else {
+						this.writer.writeU8(ValueType.FLOAT64)
+						this.writer.writeF64(value)
+					}
+				} else {
+					// For floats, use F32 if precision allows, otherwise F64
+					if (Math.abs(value) < 3.4e38 && !Number.isNaN(value)) {
+						const f32 = new Float32Array([value])[0]
+						if (f32 === value) {
+							this.writer.writeU8(ValueType.FLOAT32)
+							this.writer.writeF32(value)
 						} else {
 							this.writer.writeU8(ValueType.FLOAT64)
 							this.writer.writeF64(value)
 						}
 					} else {
-						// For floats, use F32 if precision allows, otherwise F64
-						if (Math.abs(value) < 3.4e38 && !Number.isNaN(value)) {
-							const f32 = new Float32Array([value])[0]
-							if (f32 === value) {
-								this.writer.writeU8(ValueType.FLOAT32)
-								this.writer.writeF32(value)
-							} else {
-								this.writer.writeU8(ValueType.FLOAT64)
-								this.writer.writeF64(value)
-							}
-						} else {
-							this.writer.writeU8(ValueType.FLOAT64)
-							this.writer.writeF64(value)
-						}
+						this.writer.writeU8(ValueType.FLOAT64)
+						this.writer.writeF64(value)
 					}
-				} else if (typeof value === 'string') {
-					this.writer.writeU8(ValueType.STRING)
-					this.writer.writeString(value)
-				} else if (Array.isArray(value)) {
-					this.writer.writeU8(ValueType.ARRAY)
-					this.writer.writeU32(array.length)
-					for (const item of array)
-						this.writeValue(item)
-				} else if (typeof value === 'object') {
-					this.writer.writeU8(ValueType.OBJECT)
-					const entries = Object.entries(object)
-					this.writer.writeU32(entries.length)
-					for (const [key, val] of entries) {
-						this.writeValue(key)
-						this.writeValue(val)
-					}
-				} else {
-					throw new Error(`Cannot serialize value of type: ${typeof value}`)
 				}
-
-				return this
+			} else if (typeof value === 'string') {
+				this.writer.writeU8(ValueType.STRING)
+				this.writer.writeString(value)
+			} else if (Array.isArray(value)) {
+				this.writer.writeU8(ValueType.ARRAY)
+				this.writer.writeU32(array.length)
+				for (const item of array)
+					this.writeValue(item)
+			} else if (typeof value === 'object') {
+				this.writer.writeU8(ValueType.OBJECT)
+				const entries = Object.entries(object)
+				this.writer.writeU32(entries.length)
+				for (const [key, val] of entries) {
+					this.writeValue(key)
+					this.writeValue(val)
+				}
+			} else {
+				throw new Error(`Cannot serialize value of type: ${typeof value}`)
 			}
-		}
 
-	if (typeof module !== 'undefined' && module.exports) {
-		module.exports = { BinaryContainer, BinaryReader, BinaryWriter, BinaryReaderTyped, BinaryWriterTyped, clearBinaryHexData }
+			return this
+		}
 	}
 
 

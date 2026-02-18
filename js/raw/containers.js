@@ -400,7 +400,3 @@ class Queue extends _ArrayLike {
 		return this._data[this.getSize() - 1]
 	}
 }
-
-if (module !== undefined && module.exports) {
-	module.exports = { Container, Vector, Map, Set, Stack, Queue }
-}

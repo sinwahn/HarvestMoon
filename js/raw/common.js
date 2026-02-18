@@ -98,7 +98,3 @@ function expectinstanceof(
 
 	raise_typeerror(`'${expected}' expected, got '${actual}'`)
 }
-
-if (module !== undefined && module.exports) {
-	module.exports = { raise, raise_typeerror, assert, istype, expecttype, expectinstanceof }
-}
