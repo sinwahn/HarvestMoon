@@ -690,9 +690,9 @@ const HM = (() => {
 						object[key] = val
 					}
 					return object
-				default:
-					throw new Error(`Unknown value type: ${typeId}`)
 			}
+		
+			throw new Error(`Unknown value type: ${typeId}`)
 		}
 	}
 
@@ -753,12 +753,12 @@ const HM = (() => {
 				this.writer.writeString(value)
 			} else if (Array.isArray(value)) {
 				this.writer.writeU8(ValueType.ARRAY)
-				this.writer.writeU32(array.length)
-				for (const item of array)
+				this.writer.writeU32(value.length)
+				for (const item of value)
 					this.writeValue(item)
 			} else if (typeof value === 'object') {
 				this.writer.writeU8(ValueType.OBJECT)
-				const entries = Object.entries(object)
+				const entries = Object.entries(value)
 				this.writer.writeU32(entries.length)
 				for (const [key, val] of entries) {
 					this.writeValue(key)
