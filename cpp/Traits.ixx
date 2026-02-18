@@ -11,7 +11,7 @@ export namespace HarvestMoon
 		!Trait<T>::value && Trait<std::remove_cvref_t<T>>::value;
 
 	template <typename T, typename... Types>
-	constexpr bool isAnyOf_v = (std::is_same_v<T, Types> || ...);;
+	constexpr bool isAnyOf_v = (std::is_same_v<T, Types> || ...);
 
 	template <typename Value>
 	using ValueHandler = void(*)(Value&);
