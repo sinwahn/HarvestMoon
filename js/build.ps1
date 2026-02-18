@@ -74,7 +74,7 @@ $body
 `treturn {
 $exportLines
 `t}
-})()
+})();
 "@
 }
 

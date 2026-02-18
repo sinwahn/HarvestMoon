@@ -112,4 +112,4 @@ const HM = (() => {
 		expecttype,
 		expectinstanceof,
 	}
-})()
+})();

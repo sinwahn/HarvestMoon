@@ -1307,4 +1307,4 @@ const HM = (() => {
 		BinaryWriterTyped,
 		clearBinaryHexData,
 	}
-})()
+})();
