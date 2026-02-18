@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 set "directoryFrom=%1"
-set "directoryTo=%2"
+set "remoteDirectoryTo=%2"
 set "ip=%3"
 set "user=%4"
 set "password=%5"
@@ -13,10 +13,10 @@ if "!directoryFrom!"=="" (
     goto validate_directoryFrom
 )
 
-:validate_directoryTo
-if "!directoryTo!"=="" (
-    set /p directoryTo="Enter directoryTo (destination path): "
-    goto validate_directoryTo
+:validate_remoteDirectoryTo
+if "!remoteDirectoryTo!"=="" (
+    set /p remoteDirectoryTo="Enter remoteDirectoryTo (remote destination path): "
+    goto validate_remoteDirectoryTo
 )
 
 :validate_ip
@@ -46,13 +46,12 @@ set "tempSubdir=deploy_!mydate!_!mytime!"
 set "remoteTempPath=/tmp/!tempSubdir!"
 
 echo [*] Deploying from: !directoryFrom!
-echo [*] Destination:   !directoryTo!
+echo [*] Destination:   !remoteDirectoryTo!
 echo [*] Remote temp:   !remoteTempPath!
 
 (
-    cd /d "!directoryFrom!" 2>nul
-    tar -czf - .
-) | ssh !user!@!ip! "mkdir -p '!remoteTempPath!' && tar -xzf - -C '!remoteTempPath!' --strip-components=1 && echo '!password!' | sudo -S sh -c 'cp -r '\''!remoteTempPath!'\''/* '\''!directoryTo!'\''/ && rm -rf '\''!remoteTempPath!'\'' '"
+    tar -czf - -C "!directoryFrom!" .
+) | ssh !user!@!ip! "mkdir -p '!remoteTempPath!' && tar -xzf - -C '!remoteTempPath!' --strip-components=1 && echo '!password!' | sudo -S sh -c 'cp -r '\''!remoteTempPath!'\''/* '\''!remoteDirectoryTo!'\''/ && rm -rf '\''!remoteTempPath!'\'' '"
 if errorlevel 1 (
     echo Error: Deployment failed
     exit /b 1
