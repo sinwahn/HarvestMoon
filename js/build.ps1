@@ -28,7 +28,7 @@ $BuiltDir = Join-Path $PSScriptRoot 'built'
 $Sources = @(
 	[ordered]@{
 		File = 'common.js'
-		Exports = @('raise', 'raise_typeerror', 'assert', 'istype', 'expecttype', 'expectinstanceof')
+		Exports = @('raise', 'raise_typeerror', 'assert', 'istype', 'expecttype', 'isinstanceof', 'expectinstanceof', 'istypeorinstance', 'expecttypeorinstance')
 	}
 	[ordered]@{
 		File = 'containers.js'

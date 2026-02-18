@@ -202,6 +202,9 @@ const HM = (() => {
 		assert,
 		istype,
 		expecttype,
+		isinstanceof,
 		expectinstanceof,
+		istypeorinstance,
+		expecttypeorinstance,
 	}
 })();
