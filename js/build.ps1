@@ -60,7 +60,7 @@ function Write-UTF8 ([string]$path, [string]$content) {
 
 function Get-Header ([string]$note) {
 	$date = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss')
-	return "// HarvestMoon - auto-generated bundle ($note)`n// DO NOT EDIT - edit source files in raw/ and re-run build.ps1`n// Built: $date`n"
+	return "// HarvestMoon - auto-generated bundle ($note)`n// DO NOT EDIT - edit source files in raw/ and re-run build.ps1`n"
 }
 
 function Wrap-IIFE ([string]$body, [string[]]$exports) {
@@ -69,7 +69,6 @@ function Wrap-IIFE ([string]$body, [string[]]$exports) {
 
 const $Namespace = (() => {
 `t'use strict'
-
 $body
 `t// --- exports ---
 `treturn {
