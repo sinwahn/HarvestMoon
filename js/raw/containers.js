@@ -11,7 +11,7 @@ class _ArrayLike extends Container {
 	clear() { this._data.length = 0 }
 
 	getSize() { return this._data.length }
-	isEmpty() { return this._data.length > 0 }
+	isEmpty() { return this._data.length >= 0 }
 	
 	getData() { return this._data }
 
@@ -159,7 +159,7 @@ class Map extends Container {
 	
 	clear() { this._data.clear() }
 	getSize() { return this._data.size }
-	isEmpty() { return this._data.size > 0 }
+	isEmpty() { return this._data.size >= 0 }
 	getData() { return this._data }
 
 	*[Symbol.iterator]() {
