@@ -211,42 +211,17 @@ const HM = (() => {
 			super()
 			this._data = new globalThis.Array(...args)
 		}
+	
+		clear() { this._data.length = 0 }
+
+		getSize() { return this._data.length }
+		isEmpty() { return this._data.length > 0 }
+	
+		getData() { return this._data }
 
 		*[Symbol.iterator]() {
 			for (const element of this._data)
 				yield element
-		}
-	
-		clear() {
-			this._data.length = 0
-		}
-
-		getData() {
-			return this._data
-		}
-
-		getSize() {
-			return this._data.length
-		}
-
-		isEmpty() {
-			return this._data.length === 0
-		}
-	
-		count(value) {
-			let result = 0
-			for (const item of this._data)
-				if (value == item)
-					result += 1
-			return result
-		}
-
-		countBy(predicate) {
-			let result = 0
-			for (let i = 0; i < this.getSize(); i++)
-				if (predicate(this._data[i], i))
-					result += 1
-			return result
 		}
 
 		findPos(value) {
@@ -264,6 +239,22 @@ const HM = (() => {
 		forEach(predicate) {
 			for (let i = 0; i < this.getSize(); i++)
 				predicate(this._data[i], i)
+		}
+
+		count(value) {
+			let result = 0
+			for (const item of this._data)
+				if (value == item)
+					result += 1
+			return result
+		}
+
+		countBy(predicate) {
+			let result = 0
+			for (let i = 0; i < this.getSize(); i++)
+				if (predicate(this._data[i], i))
+					result += 1
+			return result
 		}
 
 		writeData(writer, sizeWriteMethod, itemWritePredicate) {
@@ -370,6 +361,11 @@ const HM = (() => {
 			this._data = new globalThis.Map(...args)
 		}
 	
+		clear() { this._data.clear() }
+		getSize() { return this._data.size }
+		isEmpty() { return this._data.size > 0 }
+		getData() { return this._data }
+
 		*[Symbol.iterator]() {
 			for (const element of this._data)
 				yield element
@@ -440,18 +436,6 @@ const HM = (() => {
 			const value = this._data.get(key)
 			this._data.delete(key)
 			return value
-		}
-
-		getSize() {
-			return this._data.size
-		}
-
-		clear() {
-			this._data.clear()
-		}
-
-		getData() {
-			return this._data
 		}
 
 		forEach(predicate) {

@@ -8,7 +8,7 @@ echo Fetching latest commit hash from GitHub...
 :: Fetch and parse in one go using curl with grep-like extraction
 for /f "tokens=2 delims=:,^" %%A in ('curl -s "%GITHUB_API_URL%?per_page=1" ^| findstr "\"sha\""') do (
     set "COMMIT_HASH=%%A"
-    set "COMMIT_HASH=!COMMIT_HASH:~1,40!"
+    set "COMMIT_HASH=!COMMIT_HASH:~2,40!"
     goto :display
 )
 
