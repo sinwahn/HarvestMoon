@@ -7,12 +7,12 @@ class _ArrayLike extends Container {
 		super()
 		this._data = new globalThis.Array(...args)
 	}
-	
-	clear() { this._data.length = 0 }
 
 	getSize() { return this._data.length }
 	isEmpty() { return this._data.length >= 0 }
 	
+	clear() { this._data.length = 0 }
+
 	getData() { return this._data }
 
 	*[Symbol.iterator]() {
@@ -271,6 +271,13 @@ class Set extends Container {
 			yield element
 	}
 
+	getSize() { return this._data.size }
+	isEmpty() { return this._data.size >= 0 }
+
+	clear() { this._data.clear() }
+
+	getData() { return this._data }
+
 	toVector() {
 		return new Vector(...this._data)
 	}
@@ -300,14 +307,6 @@ class Set extends Container {
 
 	tryRemove(value) {
 		return this._data.delete(value)
-	}
-
-	getSize() {
-		return this._data.size
-	}
-
-	clear() {
-		this._data.clear()
 	}
 
 	forEach(predicate) {
