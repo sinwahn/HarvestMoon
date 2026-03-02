@@ -1,20 +1,600 @@
-// HarvestMoon - auto-generated bundle (BinaryIO.js)
-// DO NOT EDIT - edit source files in raw/ and re-run build.ps1
+// HarvestMoon - auto-generated (ES Module)
+// DO NOT EDIT
 
-const HM = (() => {
-	'use strict'
+// --- common.js ---
+	export function raise(message) {
+		throw new Error(message)
+	}
+
+	export function raise_typeerror(message) {
+		throw new TypeError(message)
+	}
+
+	export function assert(value, optMessage) {
+		if (value === undefined || value === null || value === false)
+			raise(optMessage || 'assertation failed!')
+		return value
+	}
+
+	export function istype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
+		const t = typeof value
+		return t === t0 || t === t2 || t === t3 || t === t4 || t === t5 || t === t6 || t === t7
+	}
+
+	export function expecttype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
+		if (istype(value, t0, t1, t2, t3, t4, t5, t6, t7))
+			return value
+		// we are in the error anyway, who cares
+		const typeNames = [t0, t1, t2, t3, t4, t5, t6, t7].filter(Boolean)
+		raise_typeerror(`'${typeNames.join(" | ")}' expected, got '${typeof value}'`)
+	}
+
+	export function isinstanceof(
+		value,
+		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
+		c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
+	) {
+		if (c0 !== undefined) {
+			if (typeof c0 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c0)
+				return true
+		}
+
+		if (c1 !== undefined) {
+			if (typeof c1 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c1)
+				return true
+		}
+
+		if (c2 !== undefined) {
+			if (typeof c2 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c2)
+				return true
+		}
+
+		if (c3 !== undefined) {
+			if (typeof c3 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c3)
+				return true
+		}
+
+		if (c4 !== undefined) {
+			if (typeof c4 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c4)
+				return true
+		}
+
+		if (c5 !== undefined) {
+			if (typeof c5 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c5)
+				return true
+		}
+
+		if (c6 !== undefined) {
+			if (typeof c6 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c6)
+				return true
+		}
+
+		if (c7) {
+			if (typeof c7 !== "function")
+				raise_typeerror("classes must be functions")
+			if (value instanceof c7)
+				return true
+		}
+
+		return false
+	}
+
+	export function expectinstanceof(
+		value,
+		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
+		c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
+	) {
+	
+		if (isinstanceof(value, t0, t1, t2, t3, t4, t5, t6, t7))
+			return value
+
+		// we are in the error anyway, who cares
+		const classNames = [c0, c1, c2, c3, c4, c5, c6, c7]
+			.filter(Boolean)
+			.map(c => c.name || "<anonymous>")
+
+		const expected = classNames.join(" | ")
+		const actual =
+			value === null ? "null" :
+			value?.constructor?.name ?? typeof value
+
+		raise_typeerror(`'${expected}' expected, got '${actual}'`)
+	}
+
+	export function istypeorinstance(
+		value,
+		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
+		c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
+	) {
+		const t = typeof value
+		if (c0 !== undefined)
+		{
+			if (typeof c0 === "function") { if (value instanceof c0) return true }
+			else if (typeof c0 === "string") { if (t === c0) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+		if (c1 !== undefined)
+		{
+			if (typeof c1 === "function") { if (value instanceof c1) return true }
+			else if (typeof c1 === "string") { if (t === c1) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+		if (c2 !== undefined)
+		{
+			if (typeof c2 === "function") { if (value instanceof c2) return true }
+			else if (typeof c2 === "string") { if (t === c2) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+		if (c3 !== undefined)
+		{
+			if (typeof c3 === "function") { if (value instanceof c3) return true }
+			else if (typeof c3 === "string") { if (t === c3) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+		if (c4 !== undefined)
+		{
+			if (typeof c4 === "function") { if (value instanceof c4) return true }
+			else if (typeof c4 === "string") { if (t === c4) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+		if (c5 !== undefined)
+		{
+			if (typeof c5 === "function") { if (value instanceof c5) return true }
+			else if (typeof c5 === "string") { if (t === c5) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+		if (c6 !== undefined)
+		{
+			if (typeof c6 === "function") { if (value instanceof c6) return true }
+			else if (typeof c6 === "string") { if (t === c6) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+		if (c7 !== undefined)
+		{
+			if (typeof c7 === "function") { if (value instanceof c7) return true }
+			else if (typeof c7 === "string") { if (t === c7) return true }
+			else raise_typeerror("classes/primitives must be functions/string")
+		}
+
+		return false
+	}
+
+	export function expecttypeorinstance(
+		value,
+		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
+		c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
+	) {
+
+		if (istypeorinstance(value, c0, c1, c2, c3, c4, c5, c6, c7))
+			return value
+
+		// we are in the error anyway, who cares
+		const classNames = [c0, c1, c2, c3, c4, c5, c6, c7]
+			.filter(Boolean)
+			.map(c => typeof(c) == 'string' ? c : c.name || "<anonymous>")
+
+		const expected = classNames.join(" | ")
+		const actual =
+			value === null ? "null" :
+			value?.constructor?.name ?? typeof value
+
+		raise_typeerror(`'${expected}' expected, got '${actual}'`)
+	}
+
+// --- containers.js ---
+	export class Container {}
+
+	class _ArrayLike extends Container {
+		_data
+
+		constructor(...args) {
+			super()
+			this._data = new globalThis.Array(...args)
+		}
+
+		getSize() { return this._data.length }
+		isEmpty() { return this._data.length >= 0 }
+	
+		clear() { this._data.length = 0 }
+
+		getData() { return this._data }
+
+		*[Symbol.iterator]() {
+			for (const element of this._data)
+				yield element
+		}
+
+		findPos(value) {
+			const index = this._data.indexOf(value)
+			return index === -1 ? undefined : index
+		}
+
+		findPosBy(predicate) {
+			for (let i = 0; i < this.getSize(); i++)
+				if (predicate(this._data[i], i))
+					return i
+			return undefined
+		}
+
+		forEach(predicate) {
+			for (let i = 0; i < this.getSize(); i++)
+				predicate(this._data[i], i)
+		}
+
+		count(value) {
+			let result = 0
+			for (const item of this._data)
+				if (value == item)
+					result += 1
+			return result
+		}
+
+		countBy(predicate) {
+			let result = 0
+			for (let i = 0; i < this.getSize(); i++)
+				if (predicate(this._data[i], i))
+					result += 1
+			return result
+		}
+
+		writeData(writer, sizeWriteMethod, itemWritePredicate) {
+			sizeWriteMethod(writer, this.getSize())
+			for (const value of this._data)
+				itemWritePredicate(writer, value)
+		}
+
+		readData(reader, sizeReadMethod, itemReadPredicate) {
+			const count = sizeReadMethod(reader)
+			this.clear()
+			for (let i = 0; i < count; i++) {
+				const value = itemReadPredicate(reader)
+				assert(value !== undefined)
+				this._data[i] = value
+			}
+		}
+	}
+
+	export class Vector extends _ArrayLike {
+
+		constructor(...args) {
+			super(...args);
+		}
+	
+		set(index, value) {
+		    expecttype(index, "number")
+		    assert(index >= 0, `index must be non-negative: ${index}`)
+		    assert(index < this.getSize(), `index out of bounds: ${index}`)
+		    this._data[index] = value
+		}
+	
+		get(index) {
+		    assert(index >= 0 && index < this.getSize(), `vector index out of bounds: ${index}`)
+		    return this._data[index]
+		}
+
+		front() {
+			assert(!this.isEmpty(), "vector is empty")
+			return this._data[0]
+		}
+
+		back() {
+			assert(!this.isEmpty(), "vector is empty")
+			return this._data[this.getSize() - 1]
+		}
+
+		pushBack(item) {
+			assert(item)
+			this._data.push(item)
+		}
+
+		popBack() {
+			assert(!this.isEmpty(), "vector is empty")
+			return this._data.pop()
+		}
+	
+		contains(value) {
+		    return this.findPos(value) !== undefined
+		}
+	
+		containsBy(predicate) {
+		    return this.findPosBy(predicate) !== undefined
+		}
+
+		remove(index) {
+		    if (index < 0 || index >= this.getSize())
+		        raise(`index out of bounds: ${index}`)
+		    return this._data.splice(index, 1)[0]
+		}
+
+		removeBy(predicate) {
+			const index = this.findPosBy(predicate)
+			if (!index)
+				return undefined
+			return this.remove(index)
+		}
+
+		removeByValue(value) {
+			const removedValue = this.removeByValueNoThrow(value)
+			if (!removedValue)
+				error(`value not found '${value}'`)
+			return removedValue
+		}
+
+		removeByValueNoThrow(value) {
+			const index = this.findPos(value)
+			if (!index)
+				return undefined
+			return this.remove(index)
+		}
+
+		sort(predicate = undefined) {
+			this._data.sort(predicate)
+		}
+
+	}
+
+	export class Map extends Container {
+		_data
+
+		constructor(...args) {
+			super()
+			this._data = new globalThis.Map(...args)
+		}
+	
+		clear() { this._data.clear() }
+		getSize() { return this._data.size }
+		isEmpty() { return this._data.size >= 0 }
+		getData() { return this._data }
+
+		*[Symbol.iterator]() {
+			for (const element of this._data)
+				yield element
+		}
+
+		keys() {
+			return new Vector(...this._data.keys())
+		}
+
+		values() {
+			return new Vector(...this._data.values())
+		}
+
+		set(key, value) {
+			if (!this._data.has(key))
+				raise(`Key does not exist: ${key}`)
+			assert(value !== undefined)
+			this._data.set(key, value)
+		}
+
+		create(key, value) {
+			if (this._data.has(key))
+				raise(`Key already exists: ${key}=${value}`)
+			assert(value !== undefined)
+			this._data.set(key, value)
+		}
+
+		setOrCreate(key, value) {
+			assert(value !== undefined)
+			this._data.set(key, value)
+		}
+
+		get(key) {
+			if (!this._data.has(key))
+				raise(`Key not found: ${key}`)
+			return this._data.get(key)
+		}
+
+		find(key) {
+			return this._data.get(key)
+		}
+
+		findKeyByValue(toFind) {
+			for (const [key, value] of this._data)
+				if (value == toFind)
+					return key
+			return undefined
+		}
+
+		findKeyBy(predicate) {
+			for (const [key, value] of this._data)
+				if (predicate(key, value))
+					return key
+			return undefined
+		}
+
+		remove(key) {
+			if (!this._data.has(key))
+				raise(`Invalid key: ${key}`)
+			const value = this._data.get(key)
+			this._data.delete(key)
+			return value
+		}
+
+		tryRemove(key) {
+			if (!this._data.has(key))
+				return null
+			const value = this._data.get(key)
+			this._data.delete(key)
+			return value
+		}
+
+		forEach(predicate) {
+			for (const [key, value] of this._data)
+				predicate(key, value)
+		}
+
+		writeData(writer, sizeWriteMethod, itemWritePredicate) {
+			sizeWriteMethod(writer, this.getSize())
+			for (const [key, value] of this._data) {
+				itemWritePredicate(writer, key, value)
+			}
+		}
+
+		readData(reader, sizeReadMethod, itemReadPredicate) {
+			const count = sizeReadMethod(reader)
+			this.clear()
+			for (let i = 0; i < count; i++) {
+				const [key, value] = itemReadPredicate(reader)
+				assert(key !== undefined)
+				assert(value !== undefined)
+				this._data.set(key, value)
+			}
+		}
+	}
+
+	export class Set extends Container {
+		_data
+
+		constructor(...args) {
+			super()
+			this._data = new globalThis.Set(...args)
+		}
+
+		*[Symbol.iterator]() {
+			for (const element of this._data)
+				yield element
+		}
+
+		getSize() { return this._data.size }
+		isEmpty() { return this._data.size >= 0 }
+
+		clear() { this._data.clear() }
+
+		getData() { return this._data }
+
+		toVector() {
+			return new Vector(...this._data)
+		}
+	
+		tryInsert(value) {
+			assert(value !== undefined)
+			const had = this.has(value)
+			this._data.add(value)
+			return !had
+		}
+
+		insert(value) {
+			const inserted = this.tryInsert(value)
+			if (!inserted)
+				raise("duplicate element")
+		}
+
+		has(value) {
+			return this._data.has(value)
+		}
+
+		remove(value) {
+			if (!this.tryRemove(value))
+				raise("element does not exist")
+			return true
+		}
+
+		tryRemove(value) {
+			return this._data.delete(value)
+		}
+
+		forEach(predicate) {
+			for (const value of this._data)
+				predicate(value)
+		}
+	
+		writeData(writer, sizeWriteMethod, itemWritePredicate) {
+			sizeWriteMethod(writer, this.getSize())
+			for (const value of this._data)
+				itemWritePredicate(writer, value)
+		}
+
+		readData(reader, sizeReadMethod, itemReadPredicate) {
+			const count = sizeReadMethod(reader)
+			this.clear()
+			for (let i = 0; i < count; i++) {
+				const value = itemReadPredicate(reader)
+				assert(value !== undefined)
+				this._data.add(value)
+			}
+		}
+	}
+
+	export class Stack extends _ArrayLike {
+
+		constructor(...args) {
+			super(...args)
+		}
+
+		push(value) {
+			assert(value !== undefined)
+			this._data.push(value)
+		}
+
+		pop() {
+			if (this.isEmpty())
+				raise("stack underflow")
+			return this._data.pop()
+		}
+
+		top() {
+			assert(!this.isEmpty(), "stack is empty")
+			return this._data[this.getSize() - 1]
+		}
+	}
+
+	export class Queue extends _ArrayLike {
+
+		constructor(...args) {
+			super(...args)
+		}
+
+		enqueue(value) {
+			assert(value !== undefined)
+			this._data.push(value)
+		}
+
+		dequeue() {
+			if (this.isEmpty())
+				raise("queue underflow")
+			return this._data.shift()
+		}
+
+		front() {
+			if (this.isEmpty())
+				raise("queue is empty")
+			return this._data[0]
+		}
+
+		back() {
+			if (this.isEmpty())
+				raise("queue is empty")
+			return this._data[this.getSize() - 1]
+		}
+	}
+
+// --- BinaryIO.js ---
 	const __BinaryContainer_decoder_utf = new TextDecoder('utf-8')
 	const __BinaryContainer_decoder_ascii = new TextDecoder('ascii')
 	const __BinaryContainer_encoder = new TextEncoder()
 
-	function clearBinaryHexData(hexString) {
+	export function clearBinaryHexData(hexString) {
 		return hexString
 			.replace(/\s+/g, '')
 			.replace(/^0x/i, '')
 			.replace(/[^0-9a-fA-F]/g, '')
 	}
 
-	class BinaryContainer {
+	export class BinaryContainer {
 		constructor() {
 			this.data = null
 			this.view = null
@@ -90,7 +670,7 @@ const HM = (() => {
 		}
 	}
 
-	class BinaryReader extends BinaryContainer {
+	export class BinaryReader extends BinaryContainer {
 		constructor(data = null) {
 			super()
 			if (data) {
@@ -343,7 +923,7 @@ const HM = (() => {
 		}
 	}
 
-	class BinaryWriter extends BinaryContainer {
+	export class BinaryWriter extends BinaryContainer {
 		constructor() {
 			super()
 		}
@@ -624,7 +1204,7 @@ const HM = (() => {
 		}
 	}
 
-	const ValueType = {
+	export const ValueType = {
 		NULL: 0,
 		BOOLEAN: 1,
 		NUMBER: 2,
@@ -641,7 +1221,7 @@ const HM = (() => {
 		FLOAT64: 13,
 	}
 
-	class BinaryReaderTyped {
+	export class BinaryReaderTyped {
 		constructor(reader) {
 			this.reader = reader
 		}
@@ -696,7 +1276,7 @@ const HM = (() => {
 		}
 	}
 
-	class BinaryWriterTyped {
+	export class BinaryWriterTyped {
 		constructor(writer) {
 			this.writer = writer
 		}
@@ -772,7 +1352,7 @@ const HM = (() => {
 		}
 	}
 
-	const DebugOpcode = {
+	export const DebugOpcode = {
 		readU8: 0x01,
 		readU16: 0x02,
 		readU32: 0x03,
@@ -804,11 +1384,11 @@ const HM = (() => {
 		readCFrame: 0x1D,
 	}
 
-	const DebugOpcodeToName = Object.fromEntries(
+	export const DebugOpcodeToName = Object.fromEntries(
 		Object.entries(DebugOpcode).map(([name, op]) => [op, name])
 	)
 
-	class DebugBinaryWriter {
+	export class DebugBinaryWriter {
 		constructor(writer) {
 			this.writer = writer
 			this.log = []
@@ -865,7 +1445,7 @@ const HM = (() => {
 		toString() { return this.writer.toString() }
 	}
 
-	class DebugBinaryReader {
+	export class DebugBinaryReader {
 		constructor(reader) {
 			this.reader = reader
 			this.log = []
@@ -930,15 +1510,4 @@ const HM = (() => {
 		toHex() { return this.reader.toHex() }
 		toAscii() { return this.reader.toAscii() }
 	}
-	// --- exports ---
-	return {
-		BinaryContainer,
-		BinaryReader,
-		BinaryWriter,
-		BinaryReaderTyped,
-		BinaryWriterTyped,
-		DebugBinaryReader,
-		DebugBinaryWriter,
-		clearBinaryHexData,
-	}
-})();
+

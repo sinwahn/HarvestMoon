@@ -1,4 +1,4 @@
-class Container {}
+export class Container {}
 
 class _ArrayLike extends Container {
 	_data
@@ -70,7 +70,7 @@ class _ArrayLike extends Container {
 	}
 }
 
-class Vector extends _ArrayLike {
+export class Vector extends _ArrayLike {
 
 	constructor(...args) {
 		super(...args);
@@ -149,7 +149,7 @@ class Vector extends _ArrayLike {
 
 }
 
-class Map extends Container {
+export class Map extends Container {
 	_data
 
 	constructor(...args) {
@@ -258,7 +258,7 @@ class Map extends Container {
 	}
 }
 
-class Set extends Container {
+export class Set extends Container {
 	_data
 
 	constructor(...args) {
@@ -331,7 +331,7 @@ class Set extends Container {
 	}
 }
 
-class Stack extends _ArrayLike {
+export class Stack extends _ArrayLike {
 
 	constructor(...args) {
 		super(...args)
@@ -354,7 +354,7 @@ class Stack extends _ArrayLike {
 	}
 }
 
-class Queue extends _ArrayLike {
+export class Queue extends _ArrayLike {
 
 	constructor(...args) {
 		super(...args)

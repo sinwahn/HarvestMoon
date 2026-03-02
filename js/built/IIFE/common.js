@@ -1,27 +1,23 @@
-// HarvestMoon - auto-generated bundle (common.js)
-// DO NOT EDIT - edit source files in raw/ and re-run build.ps1
+// HarvestMoon - auto-generated (common.js)
+// DO NOT EDIT
 
 const HM = (() => {
-	'use strict'
+    'use strict'
 	function raise(message) {
 		throw new Error(message)
 	}
-
 	function raise_typeerror(message) {
 		throw new TypeError(message)
 	}
-
 	function assert(value, optMessage) {
 		if (value === undefined || value === null || value === false)
 			raise(optMessage || 'assertation failed!')
 		return value
 	}
-
 	function istype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 		const t = typeof value
 		return t === t0 || t === t2 || t === t3 || t === t4 || t === t5 || t === t6 || t === t7
 	}
-
 	function expecttype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 		if (istype(value, t0, t1, t2, t3, t4, t5, t6, t7))
 			return value
@@ -29,7 +25,6 @@ const HM = (() => {
 		const typeNames = [t0, t1, t2, t3, t4, t5, t6, t7].filter(Boolean)
 		raise_typeerror(`'${typeNames.join(" | ")}' expected, got '${typeof value}'`)
 	}
-
 	function isinstanceof(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -93,7 +88,6 @@ const HM = (() => {
 
 		return false
 	}
-
 	function expectinstanceof(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -115,7 +109,6 @@ const HM = (() => {
 
 		raise_typeerror(`'${expected}' expected, got '${actual}'`)
 	}
-
 	function istypeorinstance(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -173,7 +166,6 @@ const HM = (() => {
 
 		return false
 	}
-
 	function expecttypeorinstance(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -195,16 +187,15 @@ const HM = (() => {
 
 		raise_typeerror(`'${expected}' expected, got '${actual}'`)
 	}
-	// --- exports ---
-	return {
-		raise,
-		raise_typeerror,
-		assert,
-		istype,
-		expecttype,
-		isinstanceof,
-		expectinstanceof,
-		istypeorinstance,
-		expecttypeorinstance,
-	}
+    return {
+        assert,
+        expectinstanceof,
+        expecttype,
+        expecttypeorinstance,
+        isinstanceof,
+        istype,
+        istypeorinstance,
+        raise,
+        raise_typeerror,
+    }
 })();

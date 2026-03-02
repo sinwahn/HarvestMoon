@@ -2,14 +2,14 @@ const __BinaryContainer_decoder_utf = new TextDecoder('utf-8')
 const __BinaryContainer_decoder_ascii = new TextDecoder('ascii')
 const __BinaryContainer_encoder = new TextEncoder()
 
-function clearBinaryHexData(hexString) {
+export function clearBinaryHexData(hexString) {
 	return hexString
 		.replace(/\s+/g, '')
 		.replace(/^0x/i, '')
 		.replace(/[^0-9a-fA-F]/g, '')
 }
 
-class BinaryContainer {
+export class BinaryContainer {
 	constructor() {
 		this.data = null
 		this.view = null
@@ -85,7 +85,7 @@ class BinaryContainer {
 	}
 }
 
-class BinaryReader extends BinaryContainer {
+export class BinaryReader extends BinaryContainer {
 	constructor(data = null) {
 		super()
 		if (data) {
@@ -338,7 +338,7 @@ class BinaryReader extends BinaryContainer {
 	}
 }
 
-class BinaryWriter extends BinaryContainer {
+export class BinaryWriter extends BinaryContainer {
 	constructor() {
 		super()
 	}
@@ -619,7 +619,7 @@ class BinaryWriter extends BinaryContainer {
 	}
 }
 
-const ValueType = {
+export const ValueType = {
 	NULL: 0,
 	BOOLEAN: 1,
 	NUMBER: 2,
@@ -636,7 +636,7 @@ const ValueType = {
 	FLOAT64: 13,
 }
 
-class BinaryReaderTyped {
+export class BinaryReaderTyped {
 	constructor(reader) {
 		this.reader = reader
 	}
@@ -691,7 +691,7 @@ class BinaryReaderTyped {
 	}
 }
 
-class BinaryWriterTyped {
+export class BinaryWriterTyped {
 	constructor(writer) {
 		this.writer = writer
 	}
@@ -767,7 +767,7 @@ class BinaryWriterTyped {
 	}
 }
 
-const DebugOpcode = {
+export const DebugOpcode = {
 	readU8: 0x01,
 	readU16: 0x02,
 	readU32: 0x03,
@@ -799,11 +799,11 @@ const DebugOpcode = {
 	readCFrame: 0x1D,
 }
 
-const DebugOpcodeToName = Object.fromEntries(
+export const DebugOpcodeToName = Object.fromEntries(
 	Object.entries(DebugOpcode).map(([name, op]) => [op, name])
 )
 
-class DebugBinaryWriter {
+export class DebugBinaryWriter {
 	constructor(writer) {
 		this.writer = writer
 		this.log = []
@@ -860,7 +860,7 @@ class DebugBinaryWriter {
 	toString() { return this.writer.toString() }
 }
 
-class DebugBinaryReader {
+export class DebugBinaryReader {
 	constructor(reader) {
 		this.reader = reader
 		this.log = []

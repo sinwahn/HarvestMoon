@@ -18,110 +18,155 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# config
-
 $Namespace = 'HM'
-$RawDir	= Join-Path $PSScriptRoot 'raw'
-$BuiltDir = Join-Path $PSScriptRoot 'built'
+$RawDir        = Join-Path $PSScriptRoot 'raw'
+$BuiltIIFEDir  = Join-Path $PSScriptRoot 'built\IIFE'
+$BundleESM     = Join-Path $PSScriptRoot 'built\HarvestMoon.mjs'
+$BundleCJS     = Join-Path $PSScriptRoot 'built\HarvestMoon.cjs'
 
-# Dependency order matters for the combined bundle.
-$Sources = @(
-	[ordered]@{
-		File = 'common.js'
-		Exports = @('raise', 'raise_typeerror', 'assert', 'istype', 'expecttype', 'isinstanceof', 'expectinstanceof', 'istypeorinstance', 'expecttypeorinstance')
-	}
-	[ordered]@{
-		File = 'containers.js'
-		Exports = @('Container', 'Vector', 'Map', 'Set', 'Stack', 'Queue')
-	}
-	[ordered]@{
-		File = 'BinaryIO.js'
-		Exports = @('BinaryContainer', 'BinaryReader', 'BinaryWriter', 'BinaryReaderTyped', 'BinaryWriterTyped', 'DebugBinaryReader', 'DebugBinaryWriter', 'clearBinaryHexData')
-	}
+$SourceFiles = @(
+	'common.js'
+	'containers.js'
+	'BinaryIO.js'
 )
 
-# helpers
+function Write-Step ($msg) { Write-Host "  $msg" -ForegroundColor Cyan }
+function Write-Success ($msg) { Write-Host "  $msg" -ForegroundColor Green }
+function Write-Fail ($msg) { Write-Host "  $msg" -ForegroundColor Red; exit 1 }
 
-function Write-Step ([string]$msg) { Write-Host "  $msg" -ForegroundColor Cyan  }
-function Write-Success ([string]$msg) { Write-Host "  $msg" -ForegroundColor Green }
-function Write-Fail ([string]$msg) { Write-Host "  $msg" -ForegroundColor Red; exit 1 }
-
-function Add-Indent ([string]$src) {
+function Add-Indent ($src) {
 	$lines = $src -split "`n"
-	$lines = $lines | ForEach-Object {
+	$indented = $lines | ForEach-Object {
 		if ($_.Trim().Length -gt 0) { "`t$_" } else { $_ }
 	}
-	return $lines -join "`n"
+	return $indented -join "`n"
 }
 
-function Write-UTF8 ([string]$path, [string]$content) {
+function Write-UTF8 ($path, $content) {
+	$dir = Split-Path $path -Parent
+	if ($dir -and -not (Test-Path $dir)) {
+		New-Item -ItemType Directory -Path $dir | Out-Null
+	}
 	[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))
 }
 
-function Get-Header ([string]$note) {
+function Get-Header ($note) {
 	$date = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss')
-	return "// HarvestMoon - auto-generated bundle ($note)`n// DO NOT EDIT - edit source files in raw/ and re-run build.ps1`n"
+	return "// HarvestMoon - auto-generated ($note)`n// DO NOT EDIT`n"
 }
 
-function Wrap-IIFE ([string]$body, [string[]]$exports) {
-	$exportLines = ($exports | ForEach-Object { "`t`t$_," }) -join "`n"
-	return @"
-
-const $Namespace = (() => {
-`t'use strict'
-$body
-`t// --- exports ---
-`treturn {
-$exportLines
-`t}
-})();
-"@
+function Wrap-IIFE ($body, $exports) {
+	$lines = @()
+	$lines += "const $Namespace = (() => {"
+	$lines += "    'use strict'"
+	$lines += $body
+	if ($exports.Count -gt 0) {
+		$lines += "    return {"
+		foreach ($name in $exports) {
+			$lines += "        $name,"
+		}
+		$lines += "    }"
+	}
+	$lines += "})();"
+	return $lines -join "`n"
 }
 
-# build
+function Remove-ExportKeywords ($src) {
+	$src = $src -replace '(?m)^\s*export\s+', ''
+	$src = $src -replace '(?m)^\s*export\s*\{[^}]*\}\s*(from[^;]*)?;', ''
+	return $src
+}
 
-if (-not (Test-Path $RawDir)) { Write-Fail "raw/ not found: $RawDir" }
-if (-not (Test-Path $BuiltDir)) { New-Item -ItemType Directory -Path $BuiltDir | Out-Null }
-
-$combinedBody = [System.Text.StringBuilder]::new()
-$combinedExports = [System.Collections.Generic.List[string]]::new()
-$divider = '-' * 72
-
-foreach ($source in $Sources) {
-	$inPath = Join-Path $RawDir $source.File
-	$outPath = Join-Path $BuiltDir $source.File
-
-	if (-not (Test-Path $inPath)) { Write-Fail "missing: $inPath" }
-
-	Write-Step $source.File
-
-	$raw = Get-Content $inPath -Raw -Encoding UTF8
-	$indented = Add-Indent $raw.Trim()
-
-	# per-file output
-	$fileContent = (Get-Header $source.File) + (Wrap-IIFE $indented $source.Exports)
-	Write-UTF8 $outPath $fileContent
-
-	$sizeKB = [math]::Round((Get-Item $outPath).Length / 1KB, 1)
-	Write-Success "  -> $( $source.File )  ($sizeKB KB)"
-
-	# accumulate for combined bundle
-	[void]$combinedBody.AppendLine("`t// $divider")
-	[void]$combinedBody.AppendLine("`t// $( $source.File )")
-	[void]$combinedBody.AppendLine("`t// $divider")
-	[void]$combinedBody.AppendLine($indented)
-	[void]$combinedBody.AppendLine()
-
-	foreach ($name in $source.Exports) {
-		$combinedExports.Add($name)
+function Get-Exports-Via-Node ($FilePath) {
+	$escapedPath = $FilePath -replace '\\', '\\'
+	$nodeCmd = "import { pathToFileURL } from 'url'; import { resolve } from 'path'; const fileUrl = pathToFileURL(resolve('" + $escapedPath + "')).href; const mod = await import(fileUrl); console.log(JSON.stringify(Object.keys(mod)));"
+	
+	$json = node -e $nodeCmd 2>$null
+	if (-not $json) { return @() }
+	
+	try {
+		return $json | ConvertFrom-Json -ErrorAction Stop
+	} catch {
+		return @()
 	}
 }
 
-# combined output
-$bundlePath	= Join-Path $BuiltDir 'HarvestMoon.js'
-$bundleContent = (Get-Header 'all') + (Wrap-IIFE $combinedBody.ToString() $combinedExports)
-Write-UTF8 $bundlePath $bundleContent
+# --- Build ---
 
-$sizeKB = [math]::Round((Get-Item $bundlePath).Length / 1KB, 1)
+if (-not (Test-Path $RawDir)) { Write-Fail "raw/ not found" }
+
+if (-not (Test-Path $BuiltIIFEDir)) { 
+	New-Item -ItemType Directory -Path $BuiltIIFEDir | Out-Null 
+}
+
+$bundleDir = Split-Path $BundleESM -Parent
+if (-not (Test-Path $bundleDir)) { 
+	New-Item -ItemType Directory -Path $bundleDir | Out-Null 
+}
+
+if (-not (Test-Path (Join-Path $PSScriptRoot 'package.json'))) {
+	Write-Fail "package.json missing. Create: { `"type`": `"module`" }"
+}
+
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+	Write-Fail "Node.js not found in PATH"
+}
+
+$combinedBodyNoExport = [System.Text.StringBuilder]::new()
+$combinedBodyWithExport = [System.Text.StringBuilder]::new()
+$combinedExports = [System.Collections.Generic.List[string]]::new()
+
+foreach ($fileName in $SourceFiles) {
+	$inPath = Join-Path $RawDir $fileName
+	$outPathIIFE = Join-Path $BuiltIIFEDir $fileName
+
+	if (-not (Test-Path $inPath)) { Write-Fail "missing: $inPath" }
+	Write-Step $fileName
+
+	$exports = Get-Exports-Via-Node -FilePath $inPath
+	Write-Success "  $($exports.Count) exports: $($exports -join ', ')"
+
+	$raw = Get-Content $inPath -Raw -Encoding UTF8
+	
+	# For IIFE and CommonJS: strip export keywords
+	$clean = Remove-ExportKeywords $raw
+	$indented = Add-Indent $clean.Trim()
+	
+	# For ESM: keep export keywords, just indent
+	$indentedESM = Add-Indent $raw.Trim()
+
+	# 1. IIFE-wrapped individual file
+	$fileContentIIFE = (Get-Header $fileName) + "`n" + (Wrap-IIFE $indented $exports)
+	Write-UTF8 $outPathIIFE $fileContentIIFE
+
+	# 2. Accumulate for CommonJS bundle (no exports)
+	[void]$combinedBodyNoExport.AppendLine("// --- $fileName ---")
+	[void]$combinedBodyNoExport.AppendLine($indented)
+	[void]$combinedBodyNoExport.AppendLine()
+
+	# 3. Accumulate for ESM bundle (keep exports)
+	[void]$combinedBodyWithExport.AppendLine("// --- $fileName ---")
+	[void]$combinedBodyWithExport.AppendLine($indentedESM)
+	[void]$combinedBodyWithExport.AppendLine()
+
+	foreach ($name in $exports) { 
+		[void]$combinedExports.Add($name) 
+	}
+}
+
+# --- ESM Bundle (keeps export keywords) ---
+$esmContent = (Get-Header 'ES Module') + "`n" + $combinedBodyWithExport.ToString()
+Write-UTF8 $BundleESM $esmContent
+
+# --- CommonJS Bundle (no exports, adds module.exports at end) ---
+$exportNames = $combinedExports -join ', '
+$cjsContent = (Get-Header 'CommonJS') + "`n" + $combinedBodyNoExport.ToString()
+$cjsContent += "`n// --- CommonJS Exports ---`n"
+$cjsContent += "module.exports = { $exportNames };`n"
+Write-UTF8 $BundleCJS $cjsContent
+
 Write-Host ""
-Write-Success "-> HarvestMoon.js  ($sizeKB KB)"
+Write-Success "IIFE files   -> $BuiltIIFEDir"
+Write-Success "ES Module    -> $BundleESM"
+Write-Success "CommonJS     -> $BundleCJS"
+Write-Success "Build Complete"

@@ -1,23 +1,23 @@
-function raise(message) {
+export function raise(message) {
 	throw new Error(message)
 }
 
-function raise_typeerror(message) {
+export function raise_typeerror(message) {
 	throw new TypeError(message)
 }
 
-function assert(value, optMessage) {
+export function assert(value, optMessage) {
 	if (value === undefined || value === null || value === false)
 		raise(optMessage || 'assertation failed!')
 	return value
 }
 
-function istype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
+export function istype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 	const t = typeof value
 	return t === t0 || t === t2 || t === t3 || t === t4 || t === t5 || t === t6 || t === t7
 }
 
-function expecttype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
+export function expecttype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 	if (istype(value, t0, t1, t2, t3, t4, t5, t6, t7))
 		return value
 	// we are in the error anyway, who cares
@@ -25,7 +25,7 @@ function expecttype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '',
 	raise_typeerror(`'${typeNames.join(" | ")}' expected, got '${typeof value}'`)
 }
 
-function isinstanceof(
+export function isinstanceof(
 	value,
 	c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
 	c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
@@ -89,7 +89,7 @@ function isinstanceof(
 	return false
 }
 
-function expectinstanceof(
+export function expectinstanceof(
 	value,
 	c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
 	c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
@@ -111,7 +111,7 @@ function expectinstanceof(
 	raise_typeerror(`'${expected}' expected, got '${actual}'`)
 }
 
-function istypeorinstance(
+export function istypeorinstance(
 	value,
 	c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
 	c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
@@ -169,7 +169,7 @@ function istypeorinstance(
 	return false
 }
 
-function expecttypeorinstance(
+export function expecttypeorinstance(
 	value,
 	c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
 	c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined

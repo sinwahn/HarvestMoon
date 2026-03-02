@@ -1,8 +1,8 @@
-// HarvestMoon - auto-generated bundle (containers.js)
-// DO NOT EDIT - edit source files in raw/ and re-run build.ps1
+// HarvestMoon - auto-generated (containers.js)
+// DO NOT EDIT
 
 const HM = (() => {
-	'use strict'
+    'use strict'
 	class Container {}
 
 	class _ArrayLike extends Container {
@@ -74,7 +74,6 @@ const HM = (() => {
 			}
 		}
 	}
-
 	class Vector extends _ArrayLike {
 
 		constructor(...args) {
@@ -153,7 +152,6 @@ const HM = (() => {
 		}
 
 	}
-
 	class Map extends Container {
 		_data
 
@@ -262,7 +260,6 @@ const HM = (() => {
 			}
 		}
 	}
-
 	class Set extends Container {
 		_data
 
@@ -335,7 +332,6 @@ const HM = (() => {
 			}
 		}
 	}
-
 	class Stack extends _ArrayLike {
 
 		constructor(...args) {
@@ -358,7 +354,6 @@ const HM = (() => {
 			return this._data[this.getSize() - 1]
 		}
 	}
-
 	class Queue extends _ArrayLike {
 
 		constructor(...args) {
@@ -388,13 +383,12 @@ const HM = (() => {
 			return this._data[this.getSize() - 1]
 		}
 	}
-	// --- exports ---
-	return {
-		Container,
-		Vector,
-		Map,
-		Set,
-		Stack,
-		Queue,
-	}
+    return {
+        Container,
+        Map,
+        Queue,
+        Set,
+        Stack,
+        Vector,
+    }
 })();

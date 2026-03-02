@@ -1,30 +1,24 @@
-// HarvestMoon - auto-generated bundle (all)
-// DO NOT EDIT - edit source files in raw/ and re-run build.ps1
+// HarvestMoon - auto-generated (all)
+// DO NOT EDIT
 
 const HM = (() => {
-	'use strict'
-	// ------------------------------------------------------------------------
-	// common.js
-	// ------------------------------------------------------------------------
+    'use strict'
+// --- common.js ---
 	function raise(message) {
 		throw new Error(message)
 	}
-
 	function raise_typeerror(message) {
 		throw new TypeError(message)
 	}
-
 	function assert(value, optMessage) {
 		if (value === undefined || value === null || value === false)
 			raise(optMessage || 'assertation failed!')
 		return value
 	}
-
 	function istype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 		const t = typeof value
 		return t === t0 || t === t2 || t === t3 || t === t4 || t === t5 || t === t6 || t === t7
 	}
-
 	function expecttype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 		if (istype(value, t0, t1, t2, t3, t4, t5, t6, t7))
 			return value
@@ -32,7 +26,6 @@ const HM = (() => {
 		const typeNames = [t0, t1, t2, t3, t4, t5, t6, t7].filter(Boolean)
 		raise_typeerror(`'${typeNames.join(" | ")}' expected, got '${typeof value}'`)
 	}
-
 	function isinstanceof(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -96,7 +89,6 @@ const HM = (() => {
 
 		return false
 	}
-
 	function expectinstanceof(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -118,7 +110,6 @@ const HM = (() => {
 
 		raise_typeerror(`'${expected}' expected, got '${actual}'`)
 	}
-
 	function istypeorinstance(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -176,7 +167,6 @@ const HM = (() => {
 
 		return false
 	}
-
 	function expecttypeorinstance(
 		value,
 		c0 = undefined, c1 = undefined, c2 = undefined, c3 = undefined,
@@ -198,10 +188,7 @@ const HM = (() => {
 
 		raise_typeerror(`'${expected}' expected, got '${actual}'`)
 	}
-
-	// ------------------------------------------------------------------------
-	// containers.js
-	// ------------------------------------------------------------------------
+// --- containers.js ---
 	class Container {}
 
 	class _ArrayLike extends Container {
@@ -273,7 +260,6 @@ const HM = (() => {
 			}
 		}
 	}
-
 	class Vector extends _ArrayLike {
 
 		constructor(...args) {
@@ -352,7 +338,6 @@ const HM = (() => {
 		}
 
 	}
-
 	class Map extends Container {
 		_data
 
@@ -461,7 +446,6 @@ const HM = (() => {
 			}
 		}
 	}
-
 	class Set extends Container {
 		_data
 
@@ -534,7 +518,6 @@ const HM = (() => {
 			}
 		}
 	}
-
 	class Stack extends _ArrayLike {
 
 		constructor(...args) {
@@ -557,7 +540,6 @@ const HM = (() => {
 			return this._data[this.getSize() - 1]
 		}
 	}
-
 	class Queue extends _ArrayLike {
 
 		constructor(...args) {
@@ -587,21 +569,16 @@ const HM = (() => {
 			return this._data[this.getSize() - 1]
 		}
 	}
-
-	// ------------------------------------------------------------------------
-	// BinaryIO.js
-	// ------------------------------------------------------------------------
+// --- BinaryIO.js ---
 	const __BinaryContainer_decoder_utf = new TextDecoder('utf-8')
 	const __BinaryContainer_decoder_ascii = new TextDecoder('ascii')
 	const __BinaryContainer_encoder = new TextEncoder()
-
 	function clearBinaryHexData(hexString) {
 		return hexString
 			.replace(/\s+/g, '')
 			.replace(/^0x/i, '')
 			.replace(/[^0-9a-fA-F]/g, '')
 	}
-
 	class BinaryContainer {
 		constructor() {
 			this.data = null
@@ -677,7 +654,6 @@ const HM = (() => {
 			return this
 		}
 	}
-
 	class BinaryReader extends BinaryContainer {
 		constructor(data = null) {
 			super()
@@ -930,7 +906,6 @@ const HM = (() => {
 			return value
 		}
 	}
-
 	class BinaryWriter extends BinaryContainer {
 		constructor() {
 			super()
@@ -1211,7 +1186,6 @@ const HM = (() => {
 			return __BinaryContainer_decoder_utf.decode(this.data.subarray(0, this.size))
 		}
 	}
-
 	const ValueType = {
 		NULL: 0,
 		BOOLEAN: 1,
@@ -1228,7 +1202,6 @@ const HM = (() => {
 		FLOAT32: 12,
 		FLOAT64: 13,
 	}
-
 	class BinaryReaderTyped {
 		constructor(reader) {
 			this.reader = reader
@@ -1283,7 +1256,6 @@ const HM = (() => {
 			throw new Error(`Unknown value type: ${typeId}`)
 		}
 	}
-
 	class BinaryWriterTyped {
 		constructor(writer) {
 			this.writer = writer
@@ -1359,7 +1331,6 @@ const HM = (() => {
 			return this
 		}
 	}
-
 	const DebugOpcode = {
 		readU8: 0x01,
 		readU16: 0x02,
@@ -1391,11 +1362,9 @@ const HM = (() => {
 		readColor4U8: 0x1C,
 		readCFrame: 0x1D,
 	}
-
 	const DebugOpcodeToName = Object.fromEntries(
 		Object.entries(DebugOpcode).map(([name, op]) => [op, name])
 	)
-
 	class DebugBinaryWriter {
 		constructor(writer) {
 			this.writer = writer
@@ -1452,7 +1421,6 @@ const HM = (() => {
 		toAscii() { return this.writer.toAscii() }
 		toString() { return this.writer.toString() }
 	}
-
 	class DebugBinaryReader {
 		constructor(reader) {
 			this.reader = reader
@@ -1519,31 +1487,32 @@ const HM = (() => {
 		toAscii() { return this.reader.toAscii() }
 	}
 
-
-	// --- exports ---
-	return {
-		raise,
-		raise_typeerror,
-		assert,
-		istype,
-		expecttype,
-		isinstanceof,
-		expectinstanceof,
-		istypeorinstance,
-		expecttypeorinstance,
-		Container,
-		Vector,
-		Map,
-		Set,
-		Stack,
-		Queue,
-		BinaryContainer,
-		BinaryReader,
-		BinaryWriter,
-		BinaryReaderTyped,
-		BinaryWriterTyped,
-		DebugBinaryReader,
-		DebugBinaryWriter,
-		clearBinaryHexData,
-	}
+    return {
+        assert,
+        expectinstanceof,
+        expecttype,
+        expecttypeorinstance,
+        isinstanceof,
+        istype,
+        istypeorinstance,
+        raise,
+        raise_typeerror,
+        Container,
+        Map,
+        Queue,
+        Set,
+        Stack,
+        Vector,
+        BinaryContainer,
+        BinaryReader,
+        BinaryReaderTyped,
+        BinaryWriter,
+        BinaryWriterTyped,
+        DebugBinaryReader,
+        DebugBinaryWriter,
+        DebugOpcode,
+        DebugOpcodeToName,
+        ValueType,
+        clearBinaryHexData,
+    }
 })();
