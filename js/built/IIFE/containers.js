@@ -221,6 +221,13 @@ const HM = (() => {
 			return undefined
 		}
 
+		findValueBy(predicate) {
+			for (const [key, value] of this._data)
+				if (predicate(key, value))
+					return value
+			return undefined
+		}
+
 		remove(key) {
 			if (!this._data.has(key))
 				raise(`Invalid key: ${key}`)
