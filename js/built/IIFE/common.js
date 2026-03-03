@@ -11,12 +11,12 @@ const HM = (() => {
 	}
 	function assert(value, optMessage) {
 		if (value === undefined || value === null || value === false)
-			raise(optMessage || 'assertation failed!')
+			raise(optMessage || 'assertion failed!')
 		return value
 	}
 	function istype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 		const t = typeof value
-		return t === t0 || t === t2 || t === t3 || t === t4 || t === t5 || t === t6 || t === t7
+		return t === t0 || t === t1  || t === t2 || t === t3 || t === t4 || t === t5 || t === t6 || t === t7
 	}
 	function expecttype(value, t0 = '', t1 = '', t2 = '', t3 = '', t4 = '', t5 = '', t6 = '', t7 = '') {
 		if (istype(value, t0, t1, t2, t3, t4, t5, t6, t7))
@@ -79,7 +79,7 @@ const HM = (() => {
 				return true
 		}
 
-		if (c7) {
+		if (c7 !== undefined) {
 			if (typeof c7 !== "function")
 				raise_typeerror("classes must be functions")
 			if (value instanceof c7)
@@ -94,7 +94,7 @@ const HM = (() => {
 		c4 = undefined, c5 = undefined, c6 = undefined, c7 = undefined
 	) {
 	
-		if (isinstanceof(value, t0, t1, t2, t3, t4, t5, t6, t7))
+		if (isinstanceof(value, c0, c1, c2, c3, c4, c5, c6, c7))
 			return value
 
 		// we are in the error anyway, who cares
