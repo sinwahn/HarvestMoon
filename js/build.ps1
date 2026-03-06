@@ -21,6 +21,7 @@ $ErrorActionPreference = 'Stop'
 $Namespace = 'HM'
 $RawDir        = Join-Path $PSScriptRoot 'raw'
 $BuiltIIFEDir  = Join-Path $PSScriptRoot 'built\IIFE'
+$BundleIIFE     = Join-Path $PSScriptRoot 'built\IIFE\HarvestMoon.js'
 $BundleESM     = Join-Path $PSScriptRoot 'built\HarvestMoon.mjs'
 $BundleCJS     = Join-Path $PSScriptRoot 'built\HarvestMoon.cjs'
 
@@ -164,6 +165,12 @@ $cjsContent = (Get-Header 'CommonJS') + "`n" + $combinedBodyNoExport.ToString()
 $cjsContent += "`n// --- CommonJS Exports ---`n"
 $cjsContent += "module.exports = { $exportNames };`n"
 Write-UTF8 $BundleCJS $cjsContent
+
+# --- IIFE Bundle ---
+$IIFEContent = (Get-Header 'IIFE') + "`n" + $combinedBodyNoExport.ToString()
+$IIFEContent += "`n// --- IIFE Exports ---`n"
+$exports = Get-Exports-Via-Node -FilePath $BundleESM
+Write-UTF8 $BundleIIFE $(Wrap-IIFE $IIFEContent $exports)
 
 Write-Host ""
 Write-Success "IIFE files   -> $BuiltIIFEDir"
