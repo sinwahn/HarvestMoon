@@ -1,0 +1,19 @@
+Windows Registry Editor Version 5.00
+
+; Remove PowerShell context menu entries for .ps1 files
+
+; Restore Windows.PowerShell.Run to its original state
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\Windows.PowerShell.Run]
+"MUIVerb"="@\"C:\\WINDOWS\\system32\\windowspowershell\\v1.0\\powershell.exe \",-108"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\Windows.PowerShell.Run\Command]
+@="\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" \"-file\" \" %1 \""
+
+; Remove runas and stale keys
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\runas]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\run]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\run (admin)]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\RunPS]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\RunWithPS]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\SystemFileAssociations\.ps1\Shell\RunWithPowerShell]
+[-HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Microsoft.PowerShellScript.1\Shell\RunPS]

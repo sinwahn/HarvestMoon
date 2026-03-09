@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+; Windows 11 only - Restore the classic full right-click context menu
+; After merging: restart File Explorer or sign out and back in.
+; To undo: merge Remove-PS1-ContextMenu-Win11LegacyMenu.reg
+
+[HKEY_CURRENT_USER\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32]
+@=""
