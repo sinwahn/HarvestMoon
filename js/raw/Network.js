@@ -154,7 +154,7 @@ export class IpAddressRange {
 export class CidrBlock {
 	constructor(networkAddress, prefixLength) {
 		expectinstanceof(networkAddress, IpAddress)
-		assert(isValidPrefixLength(prefixLength),
+		assert(CidrBlock.isValidPrefixLength(prefixLength),
 			`Invalid prefix length: ${prefixLength}`)
 		const mask = prefixLengthToNetMaskUint32(prefixLength)
 		this.networkAddress = IpAddress.fromUint32((networkAddress.toUint32() & mask) >>> 0)
