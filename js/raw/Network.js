@@ -202,8 +202,6 @@ export class CidrBlock {
 	toString() { return `${this.networkAddress.toDotNotationString()}/${this.prefixLength}` }
 }
 
-// --- Port ---------------------------------------------------------------------
-
 export class Port {
 	constructor(portNumber) {
 		assert(Port.isValidPort(portNumber), `Invalid port number: ${portNumber}`)
@@ -309,8 +307,6 @@ export class MacAddress {
 	toHyphenHexString() { return this.toColonHexString().replace(/:/g, '-') }
 	toString() { return this.toColonHexString() }
 }
-
-// --- SocketAddress ------------------------------------------------------------
 
 export class SocketAddress {
 	constructor(ipAddress, port) {
