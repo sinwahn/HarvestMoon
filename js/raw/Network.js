@@ -8,10 +8,6 @@ function prefixLengthToNetMaskUint32(prefixLength) {
 // Pure value types
 // -------------------------------------------------------------------------------
 
-function isValidByte() {
-	if (octets.length !== 4 || octets.some(n => isNaN(n) || n < 0 || n > 255))
-}
-
 export class IpAddress {
 	constructor(octet1, octet2, octet3, octet4) {
 		assert(Number.isInteger(octet1) && octet1 >= 0 && octet1 <= 255)
