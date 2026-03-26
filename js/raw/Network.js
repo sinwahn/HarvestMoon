@@ -8,10 +8,16 @@ function prefixLengthToNetMaskUint32(prefixLength) {
 // Pure value types
 // -------------------------------------------------------------------------------
 
-// --- IpAddress ----------------------------------------------------------------
+function isValidByte() {
+	if (octets.length !== 4 || octets.some(n => isNaN(n) || n < 0 || n > 255))
+}
 
 export class IpAddress {
 	constructor(octet1, octet2, octet3, octet4) {
+		assert(Number.isInteger(octet1) && octet1 >= 0 && octet1 <= 255)
+		assert(Number.isInteger(octet2) && octet2 >= 0 && octet2 <= 255)
+		assert(Number.isInteger(octet3) && octet3 >= 0 && octet3 <= 255)
+		assert(Number.isInteger(octet4) && octet4 >= 0 && octet4 <= 255)
 		this.octet1 = octet1
 		this.octet2 = octet2
 		this.octet3 = octet3
@@ -24,18 +30,19 @@ export class IpAddress {
 			raise(`Invalid IPv4 address string: "${str}"`)
 		return new IpAddress(...octets)
 	}
-
+	
 	static fromOctets(octet1, octet2, octet3, octet4) {
 		return new IpAddress(octet1, octet2, octet3, octet4)
 	}
 
 	static fromUint32(uint32) {
-		return new IpAddress(
-			(uint32 >>> 24) & 0xff,
-			(uint32 >>> 16) & 0xff,
-			(uint32 >>> 8) & 0xff,
-			(uint32 ) & 0xff
-		)
+		// Bypass string parsing path — bytes extracted from uint32 are always valid
+		const ip = Object.create(IpAddress.prototype)
+		ip.octet1 = (uint32 >>> 24) & 0xff
+		ip.octet2 = (uint32 >>> 16) & 0xff
+		ip.octet3 = (uint32 >>> 8) & 0xff
+		ip.octet4 = (uint32 ) & 0xff
+		return ip
 	}
 
 	toUint32() {
@@ -59,8 +66,8 @@ export class IpAddress {
 	isLessThan(other) { return this.toUint32() < other.toUint32() }
 	isGreaterThan(other){ return this.toUint32() > other.toUint32() }
 
-	// RFC 1122 §3.2.1.3 - "this" network source
-	isUnspecified() { return this.octet1 === 0 }
+	// RFC 1122 §3.2.1.3 - only 0.0.0.0 is unspecified
+	isUnspecified() { return this.toUint32() === 0 }
 
 	// RFC 5735 - entire 127.0.0.0/8 block
 	isLoopback() { return this.octet1 === 127 }
@@ -79,7 +86,7 @@ export class IpAddress {
 	isMulticast() { return this.octet1 >= 224 && this.octet1 <= 239 }
 
 	// RFC 1112 §4 - 240.0.0.0/4
-	isReservedFutureUse(){ return this.octet1 >= 240 && this.octet1 <= 254 }
+	isReservedFutureUse() { return this.octet1 >= 240 && this.octet1 <= 254 }
 
 	// RFC 919 §7 - 255.255.255.255/32
 	isLimitedBroadcast() {
@@ -102,39 +109,39 @@ export class IpAddress {
 
 export class IpAddressRange {
 	constructor(startAddress, endAddress) {
-		expectInstanceOf(startAddress, IpAddress)
-		expectInstanceOf(endAddress, IpAddress)
+		expectinstanceof(startAddress, IpAddress)
+		expectinstanceof(endAddress, IpAddress)
+		if (startAddress.isGreaterThan(endAddress))
+			raise(`Range start ${startAddress} is after end ${endAddress}`)
 		this.startAddress = startAddress
 		this.endAddress = endAddress
 	}
 
 	static fromStartAndEndAddresses(startAddress, endAddress) {
-		if (startAddress.isGreaterThan(endAddress))
-			raise(`Range start ${startAddress} is after end ${endAddress}`)
 		return new IpAddressRange(startAddress, endAddress)
 	}
 
 	containsAddress(address) {
-		expectInstanceOf(address, IpAddress)
+		expectinstanceof(address, IpAddress)
 		const uint32 = address.toUint32()
 		return uint32 >= this.startAddress.toUint32()
 			&& uint32 <= this.endAddress.toUint32()
 	}
 
 	containsRange(other) {
-		expectInstanceOf(other, IpAddressRange)
+		expectinstanceof(other, IpAddressRange)
 		return this.startAddress.toUint32() <= other.startAddress.toUint32()
 			&& this.endAddress.toUint32() >= other.endAddress.toUint32()
 	}
 
 	overlapsWithRange(other) {
-		expectInstanceOf(other, IpAddressRange)
+		expectinstanceof(other, IpAddressRange)
 		return this.startAddress.toUint32() <= other.endAddress.toUint32()
 			&& this.endAddress.toUint32() >= other.startAddress.toUint32()
 	}
 
 	countAddresses() {
-		return (this.endAddress.toUint32() - this.startAddress.toUint32() + 1) >>> 0
+		return this.endAddress.toUint32() - this.startAddress.toUint32() + 1
 	}
 
 	equals(other) {
@@ -150,35 +157,36 @@ export class IpAddressRange {
 
 export class CidrBlock {
 	constructor(networkAddress, prefixLength) {
-		expectInstanceOf(networkAddress, IpAddress)
-		this.networkAddress = networkAddress
+		expectinstanceof(networkAddress, IpAddress)
+		assert(isValidPrefixLength(prefixLength),
+			`Invalid prefix length: ${prefixLength}`)
+		const mask = prefixLengthToNetMaskUint32(prefixLength)
+		this.networkAddress = IpAddress.fromUint32((networkAddress.toUint32() & mask) >>> 0)
 		this.prefixLength = prefixLength
+	}
+
+	static isValidPrefixLength(prefixLength) {
+		return Number.isInteger(prefixLength) && prefixLength >= 0 && prefixLength <= 32
 	}
 
 	static fromString(str) {
 		const [addrStr, prefixStr] = str.split('/')
 		const prefixLength = Number(prefixStr)
-		if (isNaN(prefixLength) || prefixLength < 0 || prefixLength > 32)
-			raise(`Invalid CIDR notation string: "${str}"`)
+		assert(CidrBlock.isValidPrefixLength(prefixLength), `Invalid CIDR notation string: "${str}"`)
 		return new CidrBlock(IpAddress.fromDotNotationString(addrStr), prefixLength)
 	}
 
 	static fromAddressAndPrefixLength(networkAddress, prefixLength) {
-		expectInstanceOf(networkAddress, IpAddress)
-		if (!Number.isInteger(prefixLength) || prefixLength < 0 || prefixLength > 32)
-			raise(`Invalid prefix length: ${prefixLength}`)
 		return new CidrBlock(networkAddress, prefixLength)
 	}
 
-	getMaskedNetworkAddress() {
-		const mask = prefixLengthToNetMaskUint32(this.prefixLength)
-		return IpAddress.fromUint32((this.networkAddress.toUint32() & mask) >>> 0)
-	}
+	// Now always identical to .networkAddress (kept for backwards-compat clarity)
+	getMaskedNetworkAddress() { return this.networkAddress }
 
 	getBroadcastAddress() {
 		const mask = prefixLengthToNetMaskUint32(this.prefixLength)
-		const networkU32 = (this.networkAddress.toUint32() & mask) >>> 0
-		return IpAddress.fromUint32((networkU32 | (~mask >>> 0)) >>> 0)
+		const netU32 = this.networkAddress.toUint32()
+		return IpAddress.fromUint32((netU32 | (~mask >>> 0)) >>> 0)
 	}
 
 	getNetMaskAddress() {
@@ -186,33 +194,31 @@ export class CidrBlock {
 	}
 
 	toIpAddressRange() {
-		return IpAddressRange.fromStartAndEndAddresses(
-			this.getMaskedNetworkAddress(),
-			this.getBroadcastAddress()
-		)
+		return new IpAddressRange(this.networkAddress, this.getBroadcastAddress())
 	}
 
 	equals(other) {
 		return other instanceof CidrBlock
-			&& this.getMaskedNetworkAddress().equals(other.getMaskedNetworkAddress())
+			&& this.networkAddress.equals(other.networkAddress)
 			&& this.prefixLength === other.prefixLength
 	}
 
-	toString() {
-		return `${this.getMaskedNetworkAddress().toDotNotationString()}/${this.prefixLength}`
-	}
+	toString() { return `${this.networkAddress.toDotNotationString()}/${this.prefixLength}` }
 }
+
+// --- Port ---------------------------------------------------------------------
 
 export class Port {
 	constructor(portNumber) {
+		assert(Port.isValidPort(portNumber), `Invalid port number: ${portNumber}`)
 		this.portNumber = portNumber
 	}
 
-	static fromNumber(portNumber) {
-		if (!Number.isInteger(portNumber) || portNumber < 0 || portNumber > 65535)
-			raise(`Invalid port number: ${portNumber}`)
-		return new Port(portNumber)
+	static isValidPort(portNumber) {
+		return Number.isInteger(portNumber) & portNumber >= 0 && portNumber <= 65535
 	}
+
+	static fromNumber(portNumber) { return new Port(portNumber) }
 
 	isWellKnown() { return this.portNumber < 1024 }
 	isRegistered() { return this.portNumber >= 1024 && this.portNumber <= 49151 }
@@ -223,9 +229,54 @@ export class Port {
 	toString() { return String(this.portNumber) }
 }
 
+export class PortRange {
+	constructor(startPort, endPort) {
+		expectinstanceof(startPort, Port)
+		expectinstanceof(endPort, Port)
+		if (startPort.toNumber() > endPort.toNumber())
+			raise(`PortRange start ${startPort} is after end ${endPort}`)
+		this.startPort = startPort
+		this.endPort = endPort
+	}
+
+	static fromNumbers(start, end) {
+		return new PortRange(Port.fromNumber(start), Port.fromNumber(end))
+	}
+
+	static fromPorts(startPort, endPort) {
+		return new PortRange(startPort, endPort)
+	}
+
+	containsPort(port) {
+		expectinstanceof(port, Port)
+		return port.toNumber() >= this.startPort.toNumber()
+			&& port.toNumber() <= this.endPort.toNumber()
+	}
+
+	overlapsWithRange(other) {
+		expectinstanceof(other, PortRange)
+		return this.startPort.toNumber() <= other.endPort.toNumber()
+			&& this.endPort.toNumber() >= other.startPort.toNumber()
+	}
+
+	countPorts() {
+		return this.endPort.toNumber() - this.startPort.toNumber() + 1
+	}
+
+	equals(other) {
+		return other instanceof PortRange
+			&& this.startPort.equals(other.startPort)
+			&& this.endPort.equals(other.endPort)
+	}
+
+	toString() { return `${this.startPort}-${this.endPort}` }
+}
+
 export class MacAddress {
 	constructor(octets) {
-		this.octets = octets // Uint8Array(6)
+		if (!(octets instanceof Uint8Array) || octets.length !== 6)
+			raise(`MAC address requires a Uint8Array of exactly 6 bytes`)
+		this.octets = octets
 	}
 
 	static fromColonHexString(str) {
@@ -263,10 +314,12 @@ export class MacAddress {
 	toString() { return this.toColonHexString() }
 }
 
+// --- SocketAddress ------------------------------------------------------------
+
 export class SocketAddress {
 	constructor(ipAddress, port) {
-		expectInstanceOf(ipAddress, IpAddress)
-		expectInstanceOf(port, Port)
+		expectinstanceof(ipAddress, IpAddress)
+		expectinstanceof(port, Port)
 		this.ipAddress = ipAddress
 		this.port = port
 	}
@@ -300,9 +353,9 @@ export class SocketAddress {
 // Physical or virtual adapter on a host (eth0, wlan0, docker0, etc.)
 export class NetworkInterface {
 	constructor(name, ipAddress, cidrBlock, macAddress = null, mtu = 1500) {
-		expectInstanceOf(ipAddress, IpAddress)
-		expectInstanceOf(cidrBlock, CidrBlock)
-		if (macAddress !== null) expectInstanceOf(macAddress, MacAddress)
+		expectinstanceof(ipAddress, IpAddress)
+		expectinstanceof(cidrBlock, CidrBlock)
+		if (macAddress !== null) expectinstanceof(macAddress, MacAddress)
 		this.name = name
 		this.ipAddress = ipAddress
 		this.cidrBlock = cidrBlock
@@ -315,13 +368,8 @@ export class NetworkInterface {
 		return new NetworkInterface(name, ipAddress, cidrBlock, macAddress, mtu)
 	}
 
-	isAddressOnThisSubnet(address) {
-		return this._subnetRange.containsAddress(address)
-	}
-
-	canReachAddressWithoutRouting(address) {
-		return this.isAddressOnThisSubnet(address)
-	}
+	isAddressOnThisSubnet(address) { return this._subnetRange.containsAddress(address) }
+	canReachAddressWithoutRouting(address) { return this.isAddressOnThisSubnet(address) }
 
 	withMtu(mtu) {
 		return new NetworkInterface(this.name, this.ipAddress, this.cidrBlock, this.macAddress, mtu)
@@ -333,17 +381,15 @@ export class NetworkInterface {
 // Application-level endpoint: a service reachable at a socket address over a
 // protocol. Carries optional DNS names that resolve to it.
 export class NetEndpoint {
-	constructor(socketAddress, protocol = null, macAddress = null) {
-		expectInstanceOf(socketAddress, SocketAddress)
-		if (macAddress !== null) expectInstanceOf(macAddress, MacAddress)
+	constructor(socketAddress, protocol = null) {
+		expectinstanceof(socketAddress, SocketAddress)
 		this.socketAddress = socketAddress
 		this.protocol = protocol
-		this.macAddress = macAddress
 		this._dnsNames = new Set()
 	}
 
-	static fromSocketAddress(socketAddress, protocol = null, macAddress = null) {
-		return new NetEndpoint(socketAddress, protocol, macAddress)
+	static fromSocketAddress(socketAddress, protocol = null) {
+		return new NetEndpoint(socketAddress, protocol)
 	}
 
 	addDnsNames(...names) {
@@ -352,7 +398,7 @@ export class NetEndpoint {
 	}
 
 	getDnsNames() { return [...this._dnsNames] }
-	resolvesDnsName(name) { return this._dnsNames.has(name) }
+	resolvesDnsName(name){ return this._dnsNames.has(name) }
 
 	toUrlString() {
 		return this.protocol
@@ -366,24 +412,26 @@ export class NetEndpoint {
 // Value type representing an IP address block. Pure math, no identity.
 export class IpNetwork {
 	constructor(cidrBlock) {
-		expectInstanceOf(cidrBlock, CidrBlock)
+		expectinstanceof(cidrBlock, CidrBlock)
 		this.cidrBlock = cidrBlock
 		this._range = cidrBlock.toIpAddressRange()
 	}
 
-	static fromCidrBlock(cidrBlock) {
-		return new IpNetwork(cidrBlock)
-	}
+	static fromCidrBlock(cidrBlock) { return new IpNetwork(cidrBlock) }
 
 	getNetworkAddress() { return this._range.startAddress }
-	getBroadcastAddress() { return this._range.endAddress }
+	getBroadcastAddress(){ return this._range.endAddress }
 	getPrefixLength() { return this.cidrBlock.prefixLength }
 
 	getFirstUsableHostAddress() {
+		if (this.cidrBlock.prefixLength >= 31)
+			raise(`No usable host addresses in a /${this.cidrBlock.prefixLength} network`)
 		return IpAddress.fromUint32(this._range.startAddress.toUint32() + 1)
 	}
 
 	getLastUsableHostAddress() {
+		if (this.cidrBlock.prefixLength >= 31)
+			raise(`No usable host addresses in a /${this.cidrBlock.prefixLength} network`)
 		return IpAddress.fromUint32(this._range.endAddress.toUint32() - 1)
 	}
 
@@ -392,17 +440,15 @@ export class IpNetwork {
 		return total > 2 ? total - 2 : 0
 	}
 
-	containsAddress(address) {
-		return this._range.containsAddress(address)
-	}
+	containsAddress(address) { return this._range.containsAddress(address) }
 
 	containsNetwork(other) {
-		expectInstanceOf(other, IpNetwork)
+		expectinstanceof(other, IpNetwork)
 		return this._range.containsRange(other._range)
 	}
 
 	overlapsWithNetwork(other) {
-		expectInstanceOf(other, IpNetwork)
+		expectinstanceof(other, IpNetwork)
 		return this._range.overlapsWithRange(other._range)
 	}
 
@@ -412,13 +458,12 @@ export class IpNetwork {
 	}
 
 	splitIntoTwoEqualHalves() {
-		const total = this._range.countAddresses()
-		if (total < 4 || (total & (total - 1)) !== 0)
-			raise(`Cannot split ${this.cidrBlock} into two equal subnets`)
-		const half = total / 2
-		const startU32 = this._range.startAddress.toUint32()
-		const midU32 = (startU32 + half) >>> 0
+		if (this.cidrBlock.prefixLength >= 32)
+			raise(`Cannot split a /32 network`)
 		const newPrefix = this.cidrBlock.prefixLength + 1
+		const startU32 = this._range.startAddress.toUint32()
+		const half = this._range.countAddresses() / 2
+		const midU32 = (startU32 + half) >>> 0
 		return [
 			IpNetwork.fromCidrBlock(CidrBlock.fromAddressAndPrefixLength(
 				IpAddress.fromUint32(startU32), newPrefix
@@ -442,7 +487,8 @@ export class IpNetwork {
 export class RoutingDomain extends IpNetwork {
 	constructor(id, name, cidrBlock, owner = null) {
 		super(cidrBlock)
-		if (owner !== null) expectInstanceOf(owner, RoutingDomain)
+		if (owner !== null)
+			expectinstanceof(owner, RoutingDomain)
 		this.id = id
 		this.name = name
 		this._owner = owner
@@ -459,13 +505,13 @@ export class RoutingDomain extends IpNetwork {
 	getGateway() { return this._gateway }
 
 	setGateway(endpoint) {
-		expectInstanceOf(endpoint, NetEndpoint)
+		expectinstanceof(endpoint, NetEndpoint)
 		this._gateway = endpoint
 		return this
 	}
 
 	registerEndpoint(endpoint) {
-		expectInstanceOf(endpoint, NetEndpoint)
+		expectinstanceof(endpoint, NetEndpoint)
 		this._endpoints.add(endpoint)
 		for (const name of endpoint.getDnsNames())
 			this._dnsMap.set(name, endpoint)
@@ -473,7 +519,7 @@ export class RoutingDomain extends IpNetwork {
 	}
 
 	unregisterEndpoint(endpoint) {
-		expectInstanceOf(endpoint, NetEndpoint)
+		expectinstanceof(endpoint, NetEndpoint)
 		this._endpoints.delete(endpoint)
 		for (const name of endpoint.getDnsNames())
 			if (this._dnsMap.get(name) === endpoint)
@@ -482,7 +528,8 @@ export class RoutingDomain extends IpNetwork {
 	}
 
 	registerDnsNameForEndpoint(dnsName, endpoint) {
-		expectInstanceOf(endpoint, NetEndpoint)
+		expectinstanceof(endpoint, NetEndpoint)
+		this._endpoints.add(endpoint)
 		this._dnsMap.set(dnsName, endpoint)
 		return this
 	}
@@ -495,14 +542,23 @@ export class RoutingDomain extends IpNetwork {
 }
 
 // -------------------------------------------------------------------------------
-// known constants
+// Constants
 // -------------------------------------------------------------------------------
 
 export const Ip = Object.freeze({
 	Loopback: IpAddress.fromDotNotationString('127.0.0.1'),
 	Any: IpAddress.fromDotNotationString('0.0.0.0'),
-	LimitedBroadcast: IpAddress.fromDotNotationString('255.255.255.255'),
+	LimitedBroadcast:IpAddress.fromDotNotationString('255.255.255.255'),
 	LinkLocalBase: IpAddress.fromDotNotationString('169.254.0.0'),
+})
+
+export const Protocol = Object.freeze({
+	Tcp: 'tcp',
+	Udp: 'udp',
+	Icmp: 'icmp',
+	Sctp: 'sctp',
+	Gre: 'gre',
+	Esp: 'esp',
 })
 
 export const WellKnownPort = Object.freeze({
@@ -512,7 +568,17 @@ export const WellKnownPort = Object.freeze({
 	Smtp: Port.fromNumber(25),
 	Dns: Port.fromNumber(53),
 	Http: Port.fromNumber(80),
+	Pop3: Port.fromNumber(110),
+	Imap: Port.fromNumber(143),
 	Https: Port.fromNumber(443),
+	Smtps: Port.fromNumber(465),
+	Imaps: Port.fromNumber(993),
+	Pop3s: Port.fromNumber(995),
+	Mysql: Port.fromNumber(3306),
+	Rdp: Port.fromNumber(3389),
+	Postgres: Port.fromNumber(5432),
+	Redis: Port.fromNumber(6379),
+	Mongodb: Port.fromNumber(27017),
 })
 
 export const WellKnownNetwork = Object.freeze({
