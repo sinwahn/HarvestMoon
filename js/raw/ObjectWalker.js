@@ -1,136 +1,240 @@
-class ObjectWalkerErrorCallbacks {
-	onMissingField = () => { }
-	onBadIteratable = () => { }
+/**
+ * ObjectWalker — safe traversal of unverified deserialized data (JSON, XML, etc).
+ *
+ * The walker is the single validation boundary. Once data passes through it,
+ * downstream code receives concrete values with defaults applied. No null checks
+ * needed after extraction.
+ *
+ * Dead propagation: when a step fails (value is null/undefined), the returned
+ * walker is "dead". All further operations on a dead walker are silent no-ops
+ * that return empty/dead results. Dead state propagates only downward (to children),
+ * never upward (to the parent), so sibling steps from the same parent are independent.
+ */
+
+class ObjectWalkerCallbacks {
+	onMissingField(location, message) { }
+	onBadIterable(location, message) { }
 }
 
-const kLogObjectWalkerErrorCallbacks = new ObjectWalkerErrorCallbacks()
-kLogObjectWalkerErrorCallbacks.onMissingField = (location, optionalMessage) => { console.warn(optionalMessage, location) }
-kLogObjectWalkerErrorCallbacks.onBadIteratable = (location, optionalMessage) => { console.warn(optionalMessage, location) }
+const kSilentCallbacks = new ObjectWalkerCallbacks()
+
+const kLogCallbacks = new ObjectWalkerCallbacks()
+kLogCallbacks.onMissingField = (location, message) => {
+	console.warn('[walker] missing:', location, message ?? '')
+}
+kLogCallbacks.onBadIterable = (location, message) => {
+	console.warn('[walker] bad iterable:', location, message ?? '')
+}
 
 class ObjectWalker {
-	constructor(obj, errorCallbacks = kLogObjectWalkerErrorCallbacks, location = '>', dead) {
+	constructor(obj, callbacks = kLogCallbacks, location = '>', dead = false) {
 		this.obj = obj
-		this.errorCallbacks = errorCallbacks
+		this.callbacks = callbacks
 		this.location = location
 		this.dead = dead
 	}
 
-	_newWalker(obj, location) {
-		const result = new ObjectWalker(obj, this.errorCallbacks, location, this.dead)
-		return result
+	/**
+	 * Create a live child walker wrapping the given value.
+	 * Inherits dead state from parent (if parent is dead, child is dead too).
+	 */
+	_child(obj, location) {
+		return new ObjectWalker(obj, this.callbacks, location, this.dead)
 	}
 
-	getSubLocation(nextFieldName) {
-		if (nextFieldName)
-			return `${this.location}.${nextFieldName}`
-		return this.location
+	/**
+	 * Create an unconditionally dead child walker.
+	 */
+	_deadChild(location) {
+		return new ObjectWalker(undefined, this.callbacks, location, true)
 	}
 
-	step(fieldName, isOptional = false) {
-		const nextLocation = this.getSubLocation(fieldName)
-		const value = this.obj?.[fieldName] ?? null
+	_sub(field) {
+		return field != null ? `${this.location}.${field}` : this.location
+	}
 
-		if (value == null && !isOptional) {
-			this.onMissingField(nextLocation)
+	// ---------------------------------------------------------------
+	// Navigation
+	// ---------------------------------------------------------------
+
+	/**
+	 * Step into a field by name. Returns a dead walker if the field is
+	 * null/undefined. Reports an error unless optional is true.
+	 *
+	 * Parent walker is never affected — sibling steps are independent.
+	 */
+	step(field, optional = false) {
+		const loc = this._sub(field)
+		if (this.dead) return this._deadChild(loc)
+
+		const value = this.obj?.[field] ?? null
+		if (value == null) {
+			if (!optional) this.callbacks.onMissingField(loc)
+			return this._deadChild(loc)
 		}
-
-		const result = this._newWalker(value, nextLocation)
-		if (value == null)
-			result.onMissingField(nextLocation, isOptional)
-		return result
+		return this._child(value, loc)
 	}
 
-	forEach(callback) {
-		const location = this.location
-
-		if (this.obj == null) {
-			this.onBadIteratable(location, `cannot iterate null/undefined`)
-			return this
+	/**
+	 * Traverse a dot-separated path. Intermediate steps are always optional
+	 * (no noise for `a.b.c` when `a.b` is missing). Only the final step
+	 * respects the optional flag.
+	 */
+	stepPath(path, optional = false) {
+		const parts = path.split('.')
+		let w = this
+		for (let i = 0; i < parts.length; i++) {
+			w = w.step(parts[i], i < parts.length - 1 || optional)
 		}
-
-		if (Array.isArray(this.obj)) {
-			for (let index = 0; index < this.obj.length; index++) {
-				const value = this.obj[index]
-				const itemLocation = this.getSubLocation(index)
-				const itemWalker = this._newWalker(value, itemLocation)
-				if (callback(itemWalker, index) === false)
-					return this
-			}
-		} else if (this.obj && typeof this.obj === 'object') {
-			for (const [key, value] of Object.entries(this.obj)) {
-				const itemLocation = this.getSubLocation(key)
-				const itemWalker = this._newWalker(value, itemLocation)
-				if (callback(itemWalker, key) === false)
-					return this
-			}
-		} else {
-			this.onBadIteratable(location, `expected array or object, got ${typeof this.obj}`)
-		}
-
-		return this
+		return w
 	}
 
-	findBy(callback, isOptional = false, debugFindByMessage = 'unnamed condition') {
-		let result = null;
-
-		this.forEach((itemWalker, key) => {
-			if (callback(itemWalker, key)) {
-				result = itemWalker;
-				return false;
-			}
-		});
-
-		if (result)
-			return result
-
-		const nextLocation = this.getSubLocation(`[findBy:${debugFindByMessage}]`)
-		return this._newWalker(undefined, nextLocation)
-			.onMissingField(nextLocation, isOptional)
-	}
-
-	at(index, isOptional = false) {
-		const nextLocation = this.getSubLocation(index)
+	/**
+	 * Access an array element by index.
+	 */
+	at(index, optional = false) {
+		const loc = this._sub(index)
+		if (this.dead) return this._deadChild(loc)
 
 		if (!Array.isArray(this.obj)) {
-			return this._newWalker(undefined, nextLocation)
-				.onMissingField(nextLocation, `not an array, cannot access index ${index}`)
+			if (!optional) this.callbacks.onBadIterable(loc, `not an array, cannot index [${index}]`)
+			return this._deadChild(loc)
 		}
 
 		const value = this.obj[index]
-		const result = this._newWalker(value, nextLocation)
-		if (value == null)
-			result.onMissingField(nextLocation, isOptional)
+		if (value == null) {
+			if (!optional) this.callbacks.onMissingField(loc)
+			return this._deadChild(loc)
+		}
+		return this._child(value, loc)
+	}
+
+	// ---------------------------------------------------------------
+	// Value extraction
+	// ---------------------------------------------------------------
+
+	/** Raw value, or null if dead/missing. */
+	value() {
+		return this.dead ? null : (this.obj ?? null)
+	}
+
+	/** Raw value, or fallback if dead/missing. */
+	valueOr(fallback) {
+		return this.dead ? fallback : (this.obj ?? fallback)
+	}
+
+	/** True if alive and value is non-null. */
+	exists() {
+		return !this.dead && this.obj != null
+	}
+
+	isArray() {
+		return !this.dead && Array.isArray(this.obj)
+	}
+
+	length() {
+		return this.isArray() ? this.obj.length : 0
+	}
+
+	// ---------------------------------------------------------------
+	// Transform
+	// ---------------------------------------------------------------
+
+	/**
+	 * Transform the value. Returns a dead walker if the input or output is null.
+	 * Useful for inline conversions:
+	 *   w.step('bytes', true).map(formatBytes).value()
+	 */
+	map(fn) {
+		if (this.dead || this.obj == null) return this
+		const result = fn(this.obj)
+		if (result == null) return this._deadChild(this.location)
+		return this._child(result, this.location)
+	}
+
+	// ---------------------------------------------------------------
+	// Iteration
+	// ---------------------------------------------------------------
+
+	/**
+	 * Iterate over array items or object entries. Return false from callback
+	 * to break early. No-op if dead or not iterable.
+	 */
+	forEach(callback) {
+		if (this.dead || this.obj == null) return this
+
+		if (Array.isArray(this.obj)) {
+			for (let i = 0; i < this.obj.length; i++) {
+				const w = this._child(this.obj[i], this._sub(i))
+				if (callback(w, i) === false) break
+			}
+		} else if (typeof this.obj === 'object') {
+			for (const [key, val] of Object.entries(this.obj)) {
+				const w = this._child(val, this._sub(key))
+				if (callback(w, key) === false) break
+			}
+		} else {
+			this.callbacks.onBadIterable(this.location, `expected array/object, got ${typeof this.obj}`)
+		}
+		return this
+	}
+
+	/**
+	 * Map over items and collect results. Skips undefined returns.
+	 */
+	mapEach(callback) {
+		const results = []
+		this.forEach((w, key) => {
+			const val = callback(w, key)
+			if (val !== undefined) results.push(val)
+		})
+		return results
+	}
+
+	/**
+	 * Filter array items by predicate. Returns a walker wrapping the filtered array.
+	 */
+	filter(predicate) {
+		if (this.dead || !Array.isArray(this.obj)) return this._child([], this.location)
+		const filtered = this.obj.filter((item, i) => {
+			return predicate(this._child(item, this._sub(i)), i)
+		})
+		return this._child(filtered, this.location)
+	}
+
+	/**
+	 * Find the first item matching a predicate. Returns a dead walker if not found.
+	 */
+	findBy(predicate, optional = false, debugLabel = '?') {
+		let result = null
+		this.forEach((w, key) => {
+			if (predicate(w, key)) { result = w; return false }
+		})
+		if (result) return result
+
+		const loc = this._sub(`[findBy:${debugLabel}]`)
+		if (!optional) this.callbacks.onMissingField(loc, `no match for ${debugLabel}`)
+		return this._deadChild(loc)
+	}
+
+	/**
+	 * Build a plain object from an array of items.
+	 * keyFn(walker, index) -> key, valueFn(walker, index) -> value.
+	 * Skips entries where keyFn returns null.
+	 */
+	toRecord(keyFn, valueFn) {
+		const result = {}
+		this.forEach((w, i) => {
+			const k = keyFn(w, i)
+			if (k != null) result[k] = valueFn ? valueFn(w, i) : w.value()
+		})
 		return result
 	}
 
-	value() { return this.obj }
-	exists() { return this.obj != null }
-	isArray() { return Array.isArray(this.obj) }
-	length() { return Array.isArray(this.obj) ? this.obj.length : null }
-
-	onMissingField(location, isOptional, message) {
-		if (!this.dead) {
-			this.setDead()
-			if (!isOptional)
-				this.errorCallbacks.onMissingField(location, message)
-		}
-		return this
-	}
-
-	onBadIteratable(location, isOptional, message) {
-		if (!this.dead) {
-			this.setDead()
-			if (!isOptional)
-				this.errorCallbacks.onBadIteratable(location, message)
-		}
-		return this
-	}
-
-	setDead() {
-		this.dead = true
-	}
-
 	toString() {
-		return `[ObjectWalker location="${this.location}" exists=${this.exists()} valueType=${typeof this.obj}]`
+		if (this.dead) return `[Walker ${this.location} DEAD]`
+		return `[Walker ${this.location} ${typeof this.obj}]`
 	}
 }
+
+export { ObjectWalker, ObjectWalkerCallbacks, kLogCallbacks, kSilentCallbacks }
