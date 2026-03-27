@@ -16,7 +16,8 @@ class ObjectWalker {
 	}
 
 	_newWalker(obj, location) {
-		return new ObjectWalker(obj, this.errorCallbacks, location, this.dead)
+		const result = new ObjectWalker(obj, this.errorCallbacks, location, this.dead)
+		return result
 	}
 
 	getSubLocation(nextFieldName) {
@@ -25,15 +26,18 @@ class ObjectWalker {
 		return this.location
 	}
 
-	step(fieldName, optional = false) {
+	step(fieldName, isOptional = false) {
 		const nextLocation = this.getSubLocation(fieldName)
 		const value = this.obj?.[fieldName] ?? null
 
-		if (value == null && !optional) {
+		if (value == null && !isOptional) {
 			this.onMissingField(nextLocation)
 		}
 
-		return this._newWalker(value, nextLocation)
+		const result = this._newWalker(value, nextLocation)
+		if (value == null)
+			result.onMissingField(nextLocation, isOptional)
+		return result
 	}
 
 	forEach(callback) {
@@ -66,7 +70,7 @@ class ObjectWalker {
 		return this
 	}
 
-	findBy(callback, optional = false, debugFindByMessage = 'unnamed condition') {
+	findBy(callback, isOptional = false, debugFindByMessage = 'unnamed condition') {
 		let result = null;
 
 		this.forEach((itemWalker, key) => {
@@ -80,25 +84,23 @@ class ObjectWalker {
 			return result
 
 		const nextLocation = this.getSubLocation(`[findBy:${debugFindByMessage}]`)
-		if (!optional)
-			this.onMissingField(nextLocation)
 		return this._newWalker(undefined, nextLocation)
+			.onMissingField(nextLocation, isOptional)
 	}
 
-	at(index, optional = false) {
+	at(index, isOptional = false) {
 		const nextLocation = this.getSubLocation(index)
 
 		if (!Array.isArray(this.obj)) {
-			this.onMissingField(nextLocation, `not an array, cannot access index ${index}`)
 			return this._newWalker(undefined, nextLocation)
+				.onMissingField(nextLocation, `not an array, cannot access index ${index}`)
 		}
 
-		const value = this.obj[index] ?? null
-		if (value == null && !optional) {
-			this.onMissingField(nextLocation)
-		}
-
-		return this._newWalker(value, nextLocation)
+		const value = this.obj[index]
+		const result = this._newWalker(value, nextLocation)
+		if (value == null)
+			result.onMissingField(nextLocation, isOptional)
+		return result
 	}
 
 	value() { return this.obj }
@@ -106,21 +108,27 @@ class ObjectWalker {
 	isArray() { return Array.isArray(this.obj) }
 	length() { return Array.isArray(this.obj) ? this.obj.length : null }
 
-	onMissingField(location, message) {
+	onMissingField(location, isOptional, message) {
 		if (!this.dead) {
-			this.onErrorHit()
-			this.errorCallbacks.onMissingField(location, message)
+			this.setDead()
+			if (!isOptional)
+				this.errorCallbacks.onMissingField(location, message)
 		}
+		return this
 	}
 
-	onBadIteratable(location, message) {
+	onBadIteratable(location, isOptional, message) {
 		if (!this.dead) {
-			this.onErrorHit()
-			this.errorCallbacks.onBadIteratable(location, message)
+			this.setDead()
+			if (!isOptional)
+				this.errorCallbacks.onBadIteratable(location, message)
 		}
+		return this
 	}
 
-	onErrorHit() { this.dead = true }
+	setDead() {
+		this.dead = true
+	}
 
 	toString() {
 		return `[ObjectWalker location="${this.location}" exists=${this.exists()} valueType=${typeof this.obj}]`
