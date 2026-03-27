@@ -29,6 +29,7 @@ $SourceFiles = @(
 	'common.js'
 	'containers.js'
 	'BinaryIO.js'
+	'Network.js'
 )
 
 function Write-Step ($msg) { Write-Host "  $msg" -ForegroundColor Cyan }
@@ -82,7 +83,7 @@ function Get-Exports-Via-Node ($FilePath) {
 	$escapedPath = $FilePath -replace '\\', '\\'
 	$nodeCmd = "import { pathToFileURL } from 'url'; import { resolve } from 'path'; const fileUrl = pathToFileURL(resolve('" + $escapedPath + "')).href; const mod = await import(fileUrl); console.log(JSON.stringify(Object.keys(mod)));"
 	
-	$json = node -e $nodeCmd 2>$null
+	$json = node -e $nodeCmd
 	if (-not $json) { return @() }
 	
 	try {
