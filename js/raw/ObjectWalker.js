@@ -26,12 +26,21 @@ kLogCallbacks.onBadIterable = (location, message) => {
 	console.warn('[walker] bad iterable:', location, message ?? '')
 }
 
+class _ArrayView {
+	normalize(obj) {
+		if (obj == null) return []
+		if (Array.isArray(obj)) return obj
+		return [obj]
+	}
+}
+
 class ObjectWalker {
 	constructor(obj, callbacks = kLogCallbacks, location = '>', dead = false) {
 		this.obj = obj
 		this.callbacks = callbacks
 		this.location = location
 		this.dead = dead
+		this._view = null   // attached view, not a constructor concern
 	}
 
 	/**
@@ -137,6 +146,22 @@ class ObjectWalker {
 	}
 
 	// ---------------------------------------------------------------
+	// Views — named methods only, view types never leak to caller
+	// ---------------------------------------------------------------
+
+	/**
+	 * Attach an array coercion view to this walker.
+	 * Iteration will see a normalized array regardless of whether the
+	 * underlying value is an array, a single node, or null.
+	 */
+	coerceArray() {
+		if (this.dead) return this
+		const w = this._child(this.obj, this.location)
+		w._view = new _ArrayView()
+		return w
+	}
+	
+	// ---------------------------------------------------------------
 	// Transform
 	// ---------------------------------------------------------------
 
@@ -163,18 +188,20 @@ class ObjectWalker {
 	forEach(callback) {
 		if (this.dead || this.obj == null) return this
 
-		if (Array.isArray(this.obj)) {
-			for (let i = 0; i < this.obj.length; i++) {
-				const w = this._child(this.obj[i], this._sub(i))
+		const src = this._view ? this._view.normalize(this.obj) : this.obj
+
+		if (Array.isArray(src)) {
+			for (let i = 0; i < src.length; i++) {
+				const w = this._child(src[i], this._sub(i))
 				if (callback(w, i) === false) break
 			}
-		} else if (typeof this.obj === 'object') {
-			for (const [key, val] of Object.entries(this.obj)) {
+		} else if (typeof src === 'object') {
+			for (const [key, val] of Object.entries(src)) {
 				const w = this._child(val, this._sub(key))
 				if (callback(w, key) === false) break
 			}
 		} else {
-			this.callbacks.onBadIterable(this.location, `expected array/object, got ${typeof this.obj}`)
+			this.callbacks.onBadIterable(this.location, `expected array/object, got ${typeof src}`)
 		}
 		return this
 	}
