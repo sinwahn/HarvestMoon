@@ -11,14 +11,14 @@
  * never upward (to the parent), so sibling steps from the same parent are independent.
  */
 
-class ObjectWalkerCallbacks {
+export class ObjectWalkerCallbacks {
 	onMissingField(location, message) { }
 	onBadIterable(location, message) { }
 }
 
-const kSilentCallbacks = new ObjectWalkerCallbacks()
+export const kSilentCallbacks = new ObjectWalkerCallbacks()
 
-const kLogCallbacks = new ObjectWalkerCallbacks()
+export const kLogCallbacks = new ObjectWalkerCallbacks()
 kLogCallbacks.onMissingField = (location, message) => {
 	console.warn('[walker] missing:', location, message ?? '')
 }
@@ -34,7 +34,7 @@ class _ArrayView {
 	}
 }
 
-class ObjectWalker {
+export class ObjectWalker {
 	constructor(obj, callbacks = kLogCallbacks, location = '>', dead = false) {
 		this.obj = obj
 		this.callbacks = callbacks
@@ -263,5 +263,3 @@ class ObjectWalker {
 		return `[Walker ${this.location} ${typeof this.obj}]`
 	}
 }
-
-export { ObjectWalker, ObjectWalkerCallbacks, kLogCallbacks, kSilentCallbacks }
